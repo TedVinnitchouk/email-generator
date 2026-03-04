@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WSC Outreach Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Lato:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #b8973b; --gold-light: #d4b058;
+      --navy: #0b1221; --navy2: #111c2e; --navy3: #162135;
+      --border: rgba(184,151,59,0.18); --text: #e8e0d0; --muted: #7a8fa8;
+    }
+    body { min-height: 100vh; background: var(--navy); color: var(--text); font-family: 'Cormorant Garamond', Georgia, serif; overflow-x: hidden; }
+
+    /* ── TOP BAR ── */
+    .top-bar {
+      display: flex; align-items: center; gap: 20px;
+      padding: 14px 28px; background: var(--navy2);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .logo-mark {
+      width: 38px; height: 38px; border-radius: 7px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--gold), #8a6b20);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Cinzel', serif; font-weight: 700; font-size: 12px;
+      color: #fff; letter-spacing: 1px;
+      box-shadow: 0 4px 16px rgba(184,151,59,0.25);
+    }
+    .top-title { font-family: 'Cinzel', serif; font-size: 16px; font-weight: 600; letter-spacing: 0.05em; }
+    .top-sub { font-family: 'Lato', sans-serif; font-size: 10px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; margin-top: 1px; }
+    .top-divider { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
+    .top-config { display: flex; align-items: center; gap: 14px; flex: 1; flex-wrap: wrap; }
+    .top-field { display: flex; flex-direction: column; gap: 4px; }
+    .top-field label { font-family: 'Lato', sans-serif; font-size: 9px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+    .key-wrap { position: relative; display: flex; }
+    .key-wrap input { padding-right: 36px; width: 220px; }
+    #toggle-key { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); padding: 0; display: flex; align-items: center; }
+    .top-field input, .top-field select {
+      background: var(--navy3); border: 1px solid var(--border); border-radius: 5px;
+      padding: 7px 10px; color: var(--text); font-family: 'Lato', sans-serif; font-size: 13px;
+      outline: none; transition: border-color 0.2s;
+    }
+    .top-field input:focus, .top-field select:focus { border-color: rgba(184,151,59,0.55); }
+    .top-field select {
+      appearance: none; cursor: pointer; width: 130px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%237a8fa8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+    }
+    .top-field select option { background: var(--navy3); }
+    #calendly-url { width: 240px; }
+    .api-note { font-family: 'Lato', sans-serif; font-size: 9px; color: var(--muted); margin-top: 2px; }
+
+    /* ── GRID ── */
+    .panels-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      height: calc(100vh - 74px);
+      gap: 1px; background: var(--border);
+    }
+
+    /* ── PANEL ── */
+    .panel {
+      background: var(--navy); display: flex; flex-direction: column;
+      overflow: hidden; position: relative;
+    }
+    .panel-inner {
+      display: flex; flex: 1; overflow: hidden;
+    }
+
+    /* ── PANEL INPUT SIDE ── */
+    .panel-inputs {
+      width: 220px; flex-shrink: 0;
+      background: var(--navy2); border-right: 1px solid var(--border);
+      padding: 16px 14px; display: flex; flex-direction: column; gap: 10px;
+      overflow-y: auto;
+    }
+    .panel-num {
+      font-family: 'Lato', sans-serif; font-size: 9px; letter-spacing: 0.2em;
+      color: var(--gold); font-weight: 700; margin-bottom: 2px;
+    }
+    .p-field { display: flex; flex-direction: column; gap: 4px; }
+    .p-field label { font-family: 'Lato', sans-serif; font-size: 9px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; font-weight: 600; }
+    .p-field input {
+      width: 100%; background: var(--navy3); border: 1px solid var(--border);
+      border-radius: 5px; padding: 7px 10px; color: var(--text);
+      font-family: 'Lato', sans-serif; font-size: 12px; outline: none;
+      transition: border-color 0.2s;
+    }
+    .p-field input::placeholder { color: rgba(122,143,168,0.4); }
+    .p-field input:focus { border-color: rgba(184,151,59,0.55); box-shadow: 0 0 0 2px rgba(184,151,59,0.07); }
+
+    .gen-btn {
+      width: 100%; padding: 9px 12px;
+      background: linear-gradient(135deg, var(--gold), #8a6b20);
+      border: none; border-radius: 6px; color: #fff;
+      font-family: 'Cinzel', serif; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.06em; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
+      box-shadow: 0 3px 16px rgba(184,151,59,0.2);
+    }
+    .gen-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(184,151,59,0.35); }
+    .gen-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .panel-divider { height: 1px; background: var(--border); margin: 2px 0; }
+
+    /* quick buttons */
+    .quick-btns { display: none; flex-direction: column; gap: 5px; }
+    .quick-btns.visible { display: flex; }
+    .q-btn {
+      width: 100%; padding: 6px 10px;
+      background: rgba(184,151,59,0.06); border: 1px solid var(--border);
+      border-radius: 5px; color: var(--text); font-family: 'Lato', sans-serif;
+      font-size: 10px; letter-spacing: 0.03em; cursor: pointer; text-align: left;
+      display: flex; align-items: center; gap: 6px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .q-btn:hover { background: rgba(184,151,59,0.14); border-color: rgba(184,151,59,0.35); }
+    .q-btn svg { flex-shrink: 0; opacity: 0.65; }
+
+    .feedback-area { display: none; flex-direction: column; gap: 6px; }
+    .feedback-area.visible { display: flex; }
+    .feedback-area textarea {
+      width: 100%; background: var(--navy3); border: 1px solid var(--border);
+      border-radius: 5px; padding: 7px 10px; color: var(--text);
+      font-family: 'Lato', sans-serif; font-size: 11px; outline: none;
+      resize: none; height: 54px; transition: border-color 0.2s; line-height: 1.5;
+    }
+    .feedback-area textarea::placeholder { color: rgba(122,143,168,0.4); }
+    .feedback-area textarea:focus { border-color: rgba(184,151,59,0.55); }
+    .rev-btn {
+      width: 100%; padding: 7px 10px;
+      background: rgba(184,151,59,0.1); border: 1px solid var(--border);
+      border-radius: 5px; color: var(--gold-light);
+      font-family: 'Cinzel', serif; font-size: 10px; font-weight: 600;
+      letter-spacing: 0.06em; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      transition: background 0.2s; 
+    }
+    .rev-btn:hover:not(:disabled) { background: rgba(184,151,59,0.2); }
+    .rev-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── PANEL OUTPUT SIDE ── */
+    .panel-output {
+      flex: 1; display: flex; flex-direction: column;
+      overflow: hidden; position: relative;
+    }
+
+    .p-empty {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      opacity: 0.3; gap: 8px;
+    }
+    .p-empty p { font-family: 'Lato', sans-serif; font-size: 12px; color: var(--muted); text-align: center; max-width: 180px; line-height: 1.6; }
+
+    .p-loading {
+      display: none; flex: 1; flex-direction: column;
+      align-items: center; justify-content: center; gap: 12px;
+    }
+    .p-loading.active { display: flex; }
+    .pulse-ring {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 2px solid var(--gold);
+      animation: pulse-ring 1.8s ease-in-out infinite;
+    }
+    .p-loading p { font-family: 'Lato', sans-serif; font-size: 11px; color: var(--muted); text-align: center; max-width: 160px; line-height: 1.5; }
+
+    .p-error {
+      display: none; margin: 16px; padding: 14px;
+      background: rgba(220,60,60,0.1); border: 1px solid rgba(220,60,60,0.3);
+      border-radius: 7px; font-family: 'Lato', sans-serif; font-size: 12px; color: #f08080; line-height: 1.5;
+    }
+
+    .p-result { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    .p-result.active { display: flex; }
+
+    .p-subject-row {
+      display: flex; align-items: baseline; gap: 8px;
+      padding: 12px 16px 10px; background: var(--navy3);
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .p-subject-tag { font-family: 'Lato', sans-serif; font-size: 9px; letter-spacing: 0.16em; color: var(--gold); font-weight: 700; flex-shrink: 0; }
+    .p-subject-text { font-family: 'Cormorant Garamond', serif; font-size: 14px; color: var(--text); font-style: italic; line-height: 1.4; }
+
+    .p-body {
+      flex: 1; overflow-y: auto; padding: 14px 16px 8px;
+      font-family: 'Lato', sans-serif; font-size: 12.5px; line-height: 1.75; color: var(--text);
+    }
+    .p-body p { margin: 0 0 0.85em 0; }
+    .p-body p:last-child { margin-bottom: 0; }
+    .p-body a { color: var(--gold-light); text-decoration: underline; text-underline-offset: 2px; }
+    .p-body a:hover { color: #e8c96a; }
+
+    .p-actions { display: flex; gap: 8px; padding: 8px 16px 12px; flex-shrink: 0; border-top: 1px solid var(--border); }
+    .p-copy-btn, .p-reset-btn {
+      display: flex; align-items: center; gap: 5px;
+      padding: 6px 12px; border-radius: 5px;
+      font-family: 'Lato', sans-serif; font-size: 11px; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .p-copy-btn { background: rgba(184,151,59,0.1); border: 1px solid var(--border); color: var(--gold-light); }
+    .p-copy-btn:hover { background: rgba(184,151,59,0.2); }
+    .p-reset-btn { background: transparent; border: 1px solid rgba(122,143,168,0.2); color: var(--muted); }
+    .p-reset-btn:hover { background: rgba(122,143,168,0.08); color: #a0b4c8; }
+
+    .spinner { width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse-ring {
+      0%   { transform: scale(0.85); opacity: 0.9; box-shadow: 0 0 0 0 rgba(184,151,59,0.4); }
+      70%  { transform: scale(1);    opacity: 0.6; box-shadow: 0 0 0 12px rgba(184,151,59,0); }
+      100% { transform: scale(0.85); opacity: 0.9; box-shadow: 0 0 0 0 rgba(184,151,59,0); }
+    }
+    @keyframes result-in { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body>
+
+<!-- ── TOP CONFIG BAR ── -->
+<div class="top-bar">
+  <div class="logo-mark">WSC</div>
+  <div>
+    <div class="top-title">Outreach Generator</div>
+    <div class="top-sub">White Star Capital · Series A &amp; B</div>
+  </div>
+  <div class="top-divider"></div>
+  <div class="top-config">
+    <div class="top-field">
+      <label>Anthropic API Key</label>
+      <div class="key-wrap">
+        <input id="api-key" type="password" placeholder="sk-ant-..." />
+        <button id="toggle-key" title="Show/hide">
+          <svg id="eye-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+      <div class="api-note">Sent directly to Anthropic. Never stored.</div>
+    </div>
+    <div class="top-field">
+      <label>Sender</label>
+      <select id="sender-select">
+        <option value="Ted"      data-calendly="https://calendly.com/ted-whitestarcapital/30min">Ted</option>
+        <option value="Matt"     data-calendly="https://calendly.com/matt-whitestarcapital/30min">Matt</option>
+        <option value="Manon"    data-calendly="https://calendly.com/manon-whitestarcapital/30min">Manon</option>
+        <option value="Freddie"  data-calendly="https://calendly.com/freddie-whitestarcapital/30min">Freddie</option>
+        <option value="Marcus"   data-calendly="https://calendly.com/marcus-whitestarcapital/30min">Marcus</option>
+        <option value="Gabriel"  data-calendly="https://calendly.com/gabriel-whitestarcapital/30min">Gabriel</option>
+        <option value="Jackson"  data-calendly="https://calendly.com/jackson-whitestarcapital/30min">Jackson</option>
+        <option value="Victoria" data-calendly="https://calendly.com/victoria-whitestarcapital/30min">Victoria</option>
+      </select>
+    </div>
+    <div class="top-field">
+      <label>Calendly Link</label>
+      <input id="calendly-url" type="text" value="https://calendly.com/ted-whitestarcapital/30min" />
+    </div>
+  </div>
+</div>
+
+<!-- ── 4-PANEL GRID ── -->
+<div class="panels-grid" id="panels-grid"></div>
+
+<script>
+  // ── marked.js setup ───────────────────────────────────────────────────────
+  const renderer = new marked.Renderer();
+  renderer.link = function(href, title, text) {
+    const url   = (href && typeof href === 'object') ? href.href  : href;
+    const label = (href && typeof href === 'object') ? (href.text || text) : text;
+    return `<a href="${url||''}" target="_blank" rel="noopener">${label}</a>`;
+  };
+  marked.use({ renderer, breaks: true, gfm: true });
+
+  // ── Global helpers ────────────────────────────────────────────────────────
+  const SYSTEM = `You are an investor at White Star Capital, a $1.5bn VC fund focused on leading Series A rounds based in NYC. You are reaching out to Seed and Series A founders with the goal of getting them on a call. Be polite, professional, and upbeat.`;
+
+  function getSender()   { return document.getElementById('sender-select').value.trim() || 'Ted'; }
+  function getCalendly() { return document.getElementById('calendly-url').value.trim() || 'https://calendly.com/ted-whitestarcapital/30min'; }
+  function getApiKey()   { return document.getElementById('api-key').value.trim(); }
+
+  function buildPrompt(founderName, startupName, startupWebsite) {
+    const sender   = getSender();
+    const calendly = getCalendly();
+    const firstName = founderName.split(' ')[0];
+    return `You are a VC investor at White Star Capital, a $1.5bn fund in NYC leading Series A/B.
+
+Step 1 (required): Visit ${startupWebsite} and confirm what the company does from that site only. Do not confuse it with similarly named companies. If the site is unclear, omit uncertain details and keep personalization high-level but still industry-relevant.
+
+Output:
+1. A short, punchy subject line (max 8 words).
+2. A 3-paragraph outreach email with exactly this structure:
+
+Hard rules (no exceptions):
+- Exactly 3 distinct paragraphs
+- Paragraph 2 is 1 paragraph only, max 2 sentences
+- Tone: polite, professional, approachable
+- Goal: book a 30-minute intro call
+- Only reference information you are certain about from the website
+- Always say "what you are building at ${startupName}"
+- Never: summarize the startup's business, use m-dashes, say "what you are working on", say "AI-powered agents" (use "agents" or "AI agents" only), add extra paragraphs
+
+Paragraph 1 (copy exactly):
+Hi ${firstName},
+My name is ${sender} and I am an investor at [White Star Capital](https://www.whitestarcapital.com/), a $1.5bn VC fund focused on leading Series A and Series B rounds.
+
+Paragraph 2 (write this):
+- First sentence is ONLY this, word for word: "Really love what you are building at ${startupName}." Do not add anything else to this sentence.
+- Follow with exactly 1 sentence referencing either why what they are building is relevant or a specific industry trend directly relevant to their space.
+- Write the two sentences as ONE continuous paragraph with NO line breaks between them. Do not separate sentences onto new lines.
+- Natural, relevant, not corny. Exactly 2 sentences total. Never mention raises, funding, or press.
+- Do not provide a summary of their product. Do not use m-dashes. Keep the second sentence very concise, to the point, and natural flowing.
+
+Paragraph 3 (copy exactly):
+I'd love to grab 30 mins to dig deeper into what you are building and introduce our fund. Do you have availability in the coming weeks? Feel free to share times that work or book directly on my Calendly at [this link](${calendly}).
+Best,
+${sender}
+
+Final checks: exactly 3 paragraphs, hyperlinks in Markdown format only (never raw URLs), personalization matches the website, streamlined and concise.
+
+Output the subject line as the very last line prefixed exactly: SUBJECT: your subject here (no bold, no extra formatting)
+Subject line rules: max 8 words, highly creative and punchy, must spark curiosity and stop someone mid-scroll. Think like a journalist writing a headline — surprising, specific, a little bold. Never generic ("Quick intro", "Connecting", "Opportunity"). No punctuation at the end.
+
+FOUNDER_NAME: ${founderName}
+STARTUP_NAME: ${startupName}
+STARTUP_WEBSITE: ${startupWebsite}`;
+  }
+
+  function parseOutput(raw) {
+    let cleaned = raw.replace(/\*\*/g, '');
+    const hiIndex = cleaned.search(/^Hi /im);
+    if (hiIndex > 0) cleaned = cleaned.slice(hiIndex);
+    const match = cleaned.match(/^SUBJECT:\s*(.+)$/im);
+    const subject = match ? match[1].trim() : '';
+    const body = cleaned.replace(/^SUBJECT:\s*.+$/im, '').trim();
+    return { subject, body };
+  }
+
+  function renderBody(body) {
+    const paras = body.replace(/\r\n/g, '\n').split(/\n{2,}/);
+    const processed = paras.map((p, i) => {
+      const t = p.trim();
+      if (i === 0 || /^Best,/i.test(t)) return t;
+      return t.replace(/\n/g, ' ');
+    });
+    return marked.parse(processed.join('\n\n'));
+  }
+
+  async function callAPI(messages, useWebSearch = false) {
+    const apiKey = getApiKey();
+    const body = {
+      model: useWebSearch ? 'claude-sonnet-4-20250514' : 'claude-haiku-4-5-20251001',
+      max_tokens: 800, system: SYSTEM, messages
+    };
+    if (useWebSearch) body.tools = [{ type: 'web_search_20250305', name: 'web_search' }];
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message || 'API error');
+    return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+  }
+
+  // ── Build 4 panels ────────────────────────────────────────────────────────
+  const QUICK_BTNS = [
+    { label: 'Make it longer',     icon: `<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>`, feedback: `Make the middle paragraph approximately 33% longer and more detailed. Keep the first sentence exactly as 'Really love what you are building at [company].' Add more specific detail or context to the second sentence. Still ONE continuous paragraph, no line breaks between sentences. No product summary. No m-dashes.` },
+    { label: 'Make it shorter',    icon: `<line x1="5" y1="12" x2="19" y2="12"/>`, feedback: `Make the middle paragraph shorter and more concise.` },
+    { label: 'More natural',       icon: `<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>`, feedback: `Rewrite the middle paragraph so it sounds more natural and human — less formal, less like it was written by AI.` },
+    { label: 'Verify company',     icon: `<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>`, feedback: `Double-check that the middle paragraph's personalization is accurate and specific to the correct company. Fix anything that seems generic or inaccurate.` },
+  ];
+
+  const grid = document.getElementById('panels-grid');
+  const panelStates = {};
+
+  for (let i = 1; i <= 4; i++) {
+    // Build HTML
+    const quickBtnsHTML = QUICK_BTNS.map(b => `
+      <button class="q-btn" data-feedback="${b.feedback.replace(/"/g,'&quot;')}">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${b.icon}</svg>
+        ${b.label}
+      </button>`).join('');
+
+    const panel = document.createElement('div');
+    panel.className = 'panel';
+    panel.innerHTML = `
+      <div class="panel-inner">
+        <div class="panel-inputs" id="inputs-${i}">
+          <div class="panel-num">PANEL ${i}</div>
+          <div class="p-field"><label>Founder Name</label><input id="fn-${i}" type="text" placeholder="Jane Smith" /></div>
+          <div class="p-field"><label>Startup Name</label><input id="sn-${i}" type="text" placeholder="Acme Inc." /></div>
+          <div class="p-field"><label>Website</label><input id="sw-${i}" type="text" placeholder="https://acme.com" /></div>
+          <button class="gen-btn" id="gen-${i}" disabled>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+            Generate
+          </button>
+          <div class="panel-divider"></div>
+          <div class="quick-btns" id="qbtns-${i}">${quickBtnsHTML}</div>
+          <div class="feedback-area" id="fba-${i}">
+            <textarea id="fb-${i}" placeholder="Custom feedback..."></textarea>
+            <button class="rev-btn" id="rev-${i}">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.96"/></svg>
+              Revise
+            </button>
+          </div>
+        </div>
+        <div class="panel-output" id="output-${i}">
+          <div class="p-empty" id="empty-${i}">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            <p>Fill in the fields and click Generate</p>
+          </div>
+          <div class="p-loading" id="loading-${i}">
+            <div class="pulse-ring"></div>
+            <p id="loading-txt-${i}">Researching startup...</p>
+          </div>
+          <div class="p-error" id="error-${i}"></div>
+          <div class="p-result" id="result-${i}">
+            <div class="p-subject-row">
+              <span class="p-subject-tag">SUBJECT</span>
+              <span class="p-subject-text" id="subj-${i}"></span>
+            </div>
+            <div class="p-body" id="body-${i}"></div>
+            <div class="p-actions">
+              <button class="p-copy-btn" id="copy-${i}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy Email
+              </button>
+              <button class="p-reset-btn" id="reset-${i}">New Email</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    grid.appendChild(panel);
+
+    // State per panel
+    panelStates[i] = { lastRawBody: '' };
+
+    // Helpers scoped to panel
+    function showState(id, state) {
+      document.getElementById(`empty-${id}`).style.display   = state === 'empty'   ? 'flex' : 'none';
+      document.getElementById(`loading-${id}`).classList.toggle('active', state === 'loading');
+      document.getElementById(`error-${id}`).style.display   = state === 'error'   ? 'block' : 'none';
+      document.getElementById(`result-${id}`).classList.toggle('active', state === 'result');
+    }
+
+    function renderEmail(id, subject, body) {
+      panelStates[id].lastRawBody = body;
+      document.getElementById(`subj-${id}`).textContent = subject || '(No subject)';
+      document.getElementById(`body-${id}`).innerHTML = renderBody(body);
+    }
+
+    // Inputs → enable/disable generate
+    const inputs = [`fn-${i}`, `sn-${i}`, `sw-${i}`].map(id => document.getElementById(id));
+    const genBtn = document.getElementById(`gen-${i}`);
+    function checkGen(id) {
+      const ok = [`fn-${id}`,`sn-${id}`,`sw-${id}`].every(x => document.getElementById(x).value.trim() !== '') && getApiKey() !== '';
+      document.getElementById(`gen-${id}`).disabled = !ok;
+    }
+    inputs.forEach(inp => inp.addEventListener('input', () => checkGen(i)));
+    document.getElementById('api-key').addEventListener('input', () => checkGen(i));
+
+    // Capture i for closures
+    (function(id) {
+      const genBtnEl = document.getElementById(`gen-${id}`);
+      const revBtnEl = document.getElementById(`rev-${id}`);
+      const genBtnOrigHTML = genBtnEl.innerHTML;
+      const revBtnOrigHTML = revBtnEl.innerHTML;
+
+      // ── Generate ──
+      genBtnEl.addEventListener('click', async () => {
+        const fn = document.getElementById(`fn-${id}`).value.trim();
+        const sn = document.getElementById(`sn-${id}`).value.trim();
+        const sw = document.getElementById(`sw-${id}`).value.trim();
+        document.getElementById(`loading-txt-${id}`).textContent = `Researching ${sn}...`;
+        showState(id, 'loading');
+        genBtnEl.disabled = true;
+        genBtnEl.innerHTML = `<span class="spinner"></span>`;
+
+        const messages = [{ role: 'user', content: buildPrompt(fn, sn, sw) }];
+        try {
+          const raw = await callAPI(messages, true);
+          const { subject, body } = parseOutput(raw);
+          renderEmail(id, subject, body);
+          document.getElementById(`qbtns-${id}`).classList.add('visible');
+          document.getElementById(`fba-${id}`).classList.add('visible');
+          showState(id, 'result');
+        } catch(err) {
+          document.getElementById(`error-${id}`).innerHTML = `<strong>Error:</strong> ${err.message}`;
+          showState(id, 'error');
+        } finally {
+          genBtnEl.innerHTML = genBtnOrigHTML;
+          checkGen(id);
+        }
+      });
+
+      // ── Quick buttons ──
+      document.getElementById(`qbtns-${id}`).querySelectorAll('.q-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById(`fb-${id}`).value = btn.dataset.feedback;
+          revBtnEl.click();
+        });
+      });
+
+      // ── Revise ──
+      revBtnEl.addEventListener('click', async () => {
+        const feedback = document.getElementById(`fb-${id}`).value.trim();
+        if (!feedback) return;
+        const currentSubject = document.getElementById(`subj-${id}`).textContent;
+        const currentBody    = panelStates[id].lastRawBody;
+
+        document.getElementById(`loading-txt-${id}`).textContent = 'Revising...';
+        showState(id, 'loading');
+        revBtnEl.disabled = true;
+        revBtnEl.innerHTML = `<span class="spinner"></span>`;
+
+        const messages = [{ role: 'user', content: `Here is an outreach email:\n\nSUBJECT: ${currentSubject}\n\n${currentBody}\n\nRevise only the middle paragraph based on this feedback: ${feedback}\n\nCRITICAL RULES:\n- Keep paragraph 1 (greeting + intro) EXACTLY as written, word for word\n- Keep paragraph 3 (CTA + closing) EXACTLY as written, word for word. "Best," and the sender name must be on consecutive lines with no blank line between them.\n- Only rewrite paragraph 2\n- Paragraph 2 must be EXACTLY 2 sentences, no more, no less, written as one continuous block with NO line breaks between sentences\n- First sentence of paragraph 2 must be ONLY: "Really love what you are building at [company name]."\n- Second sentence: one concise, natural sentence about why it's relevant or a related industry trend. No product summary. No m-dashes.\n- Exactly 3 paragraphs total\n- Markdown links only: [White Star Capital](https://www.whitestarcapital.com/) and [this link](${getCalendly()})\n\nEnd with SUBJECT: on its own line (punchy, specific, no bold).` }];
+
+        try {
+          const raw = await callAPI(messages, false);
+          const { subject, body } = parseOutput(raw);
+          renderEmail(id, subject, body);
+          document.getElementById(`fb-${id}`).value = '';
+          showState(id, 'result');
+        } catch(err) {
+          document.getElementById(`error-${id}`).innerHTML = `<strong>Error:</strong> ${err.message}`;
+          showState(id, 'error');
+        } finally {
+          revBtnEl.innerHTML = revBtnOrigHTML;
+          revBtnEl.disabled = false;
+        }
+      });
+
+      // ── Copy ──
+      document.getElementById(`copy-${id}`).addEventListener('click', () => {
+        const bodyEl  = document.getElementById(`body-${id}`);
+        const bodyHTML = bodyEl.innerHTML;
+        const bodyPlain = bodyEl.innerText;
+        try {
+          const styledHTML = bodyHTML.replace(/<p>/g, '<p style="margin:0 0 1em 0;">');
+          const item = new ClipboardItem({
+            'text/html':  new Blob([styledHTML], { type: 'text/html' }),
+            'text/plain': new Blob([bodyPlain],  { type: 'text/plain' })
+          });
+          navigator.clipboard.write([item]).then(() => {
+            const btn = document.getElementById(`copy-${id}`);
+            btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+            setTimeout(() => { btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Email`; }, 2000);
+          });
+        } catch { navigator.clipboard.writeText(bodyPlain); }
+      });
+
+      // ── Reset ──
+      document.getElementById(`reset-${id}`).addEventListener('click', () => {
+        panelStates[id].lastRawBody = '';
+        [`fn-${id}`,`sn-${id}`,`sw-${id}`].forEach(x => document.getElementById(x).value = '');
+        document.getElementById(`fb-${id}`).value = '';
+        document.getElementById(`qbtns-${id}`).classList.remove('visible');
+        document.getElementById(`fba-${id}`).classList.remove('visible');
+        showState(id, 'empty');
+        checkGen(id);
+      });
+
+    })(i);
+  }
+
+  // ── Top bar: toggle API key ───────────────────────────────────────────────
+  document.getElementById('toggle-key').addEventListener('click', () => {
+    const inp = document.getElementById('api-key');
+    const ico = document.getElementById('eye-icon');
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      ico.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    } else {
+      inp.type = 'password';
+      ico.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    }
+  });
+
+  // ── Top bar: sender auto-fills calendly ──────────────────────────────────
+  document.getElementById('sender-select').addEventListener('change', function() {
+    const cal = this.options[this.selectedIndex].getAttribute('data-calendly');
+    if (cal) document.getElementById('calendly-url').value = cal;
+  });
+</script>
+</body>
+</html>
