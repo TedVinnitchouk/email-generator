@@ -320,7 +320,8 @@ Hard rules (no exceptions):
 
 Paragraph 1 (copy exactly):
 Hi ${firstName},
-My name is ${sender} and I am an investor at [White Star Capital](https://www.whitestarcapital.com/), a $1.5bn VC fund focused on leading Series A and Series B rounds.
+
+My name is ${sender} and I am an investor at [White Star Capital](https://www.whitestarcapital.com/), a $1.5bn VC fund focused on leading pre-Seed through Series B rounds.
 
 Paragraph 2 (write this):
 - First sentence is ONLY this, word for word: "Really love what you are building at ${startupName}." Do not add anything else to this sentence.
@@ -358,7 +359,11 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     const paras = body.replace(/\r\n/g, '\n').split(/\n{2,}/);
     const processed = paras.map((p, i) => {
       const t = p.trim();
-      if (i === 0 || /^Best,/i.test(t)) return t;
+      // Para 0 is "Hi Name," — keep as its own paragraph
+      if (i === 0) return t;
+      // Closing "Best," — keep line breaks for Best,\nSender
+      if (/^Best,/i.test(t)) return t;
+      // Middle paragraphs: collapse single newlines into a space
       return t.replace(/\n/g, ' ');
     });
     return marked.parse(processed.join('\n\n'));
@@ -550,7 +555,7 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         revBtnEl.disabled = true;
         revBtnEl.innerHTML = `<span class="spinner"></span>`;
 
-        const messages = [{ role: 'user', content: `Here is an outreach email:\n\nSUBJECT: ${currentSubject}\n\n${currentBody}\n\nRevise only the middle paragraph based on this feedback: ${feedback}\n\nCRITICAL RULES:\n- Keep paragraph 1 (greeting + intro) EXACTLY as written, word for word\n- Keep paragraph 3 (CTA + closing) EXACTLY as written, word for word. "Best," and the sender name must be on consecutive lines with no blank line between them.\n- Only rewrite paragraph 2\n- Paragraph 2 must be EXACTLY 2 sentences, no more, no less, written as one continuous block with NO line breaks between sentences\n- First sentence of paragraph 2 must be ONLY: "Really love what you are building at [company name]."\n- Second sentence: one concise, natural sentence about why it's relevant or a related industry trend. No product summary. No m-dashes.\n- Exactly 3 paragraphs total\n- Markdown links only: [White Star Capital](https://www.whitestarcapital.com/) and [this link](${getCalendly()})\n\nEnd with SUBJECT: on its own line (punchy, specific, no bold).` }];
+        const messages = [{ role: 'user', content: `Here is an outreach email:\n\nSUBJECT: ${currentSubject}\n\n${currentBody}\n\nRevise only the middle paragraph based on this feedback: ${feedback}\n\nCRITICAL RULES:\n- Keep paragraph 1 (greeting + intro) EXACTLY as written, word for word\n- Keep paragraph 3 (CTA + closing) EXACTLY as written, word for word. "Best," and the sender name must be on consecutive lines with no blank line between them.\n- Only rewrite paragraph 2\n- Paragraph 2 must be EXACTLY 2 sentences, no more, no less, written as one continuous block with NO line breaks between sentences\n- First sentence of paragraph 2 must be ONLY: "Really love what you are building at [company name]."\n- Second sentence: one concise, natural sentence about why it's relevant or a related industry trend. No product summary. No m-dashes.\n- Exactly 3 paragraphs total\n- Markdown links only: [White Star Capital](https://www.whitestarcapital.com/) and [this link](${getCalendly()})\n- "Best," and the sender name must be on consecutive lines with no blank line between them.\n\nEnd with SUBJECT: on its own line (punchy, specific, no bold).` }];
 
         try {
           const raw = await callAPI(messages, false);
