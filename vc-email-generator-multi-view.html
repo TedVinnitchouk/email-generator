@@ -1101,9 +1101,7 @@ STARTUP_WEBSITE: ${startupWebsite}`;
 
       renderResults(companies);
     } catch (err) {
-      const msg = err.message.includes('fetch') || err.message.includes('Failed')
-        ? 'CORS blocked — Harmonic API requires a backend proxy for browser requests. Contact your dev to set up a proxy, or use the manual input fields on each panel.'
-        : `Search failed: ${err.message}`;
+      const msg = `Search failed: ${err.message} (proxy: ${PROXY})`;
       setResultsState('error', msg);
     } finally {
       btn.disabled = false;
