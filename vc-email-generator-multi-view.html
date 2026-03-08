@@ -667,7 +667,7 @@
     <!-- CSV Upload Panel -->
     <div id="csv-panel" style="display:none; padding:12px 13px; border-bottom:1px solid var(--gold-border); flex-shrink:0;">
       <div class="sf-label" style="margin-bottom:6px;">Upload a CSV with company names &amp; websites</div>
-      <div class="sf-label" style="opacity:0.5; margin-bottom:10px; font-size:9px; text-transform:none; letter-spacing:0;">Columns: <code style="color:var(--gold)">name</code> and <code style="color:var(--gold)">website</code> (or <code style="color:var(--gold)">domain</code>)</div>
+      <div class="sf-label" style="opacity:0.5; margin-bottom:10px; font-size:9px; text-transform:none; letter-spacing:0;">Columns: <code style="color:var(--gold)">company</code>, <code style="color:var(--gold)">website</code>, <code style="color:var(--gold)">founder name</code>, <code style="color:var(--gold)">founder email</code></div>
       <label class="csv-upload-label" id="csv-upload-label">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Choose CSV file
@@ -1260,50 +1260,61 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         teEl.value = ''; teEl.placeholder = 'Looking up…';
 
         try {
-          // Fetch employees
-          const empRes = await fetch(`${PROXY}?path=%2Fcompanies%2F${id}%2Femployees&employee_group_type=FOUNDERS_AND_CEO&size=10`);
-          if (!empRes.ok) throw new Error('employees fetch failed');
-          const empData = await empRes.json();
+          // Fetch employees — try both with and without filter param
+          let empData = null;
+          const empRes1 = await fetch(`${PROXY}?path=%2Fcompanies%2F${id}%2Femployees&employee_group_type=FOUNDERS_AND_CEO&size=10`);
+          if (empRes1.ok) {
+            empData = await empRes1.json();
+          } else {
+            // Fallback: fetch without filter
+            const empRes2 = await fetch(`${PROXY}?path=%2Fcompanies%2F${id}%2Femployees&size=20`);
+            if (empRes2.ok) empData = await empRes2.json();
+          }
+
+          console.log('[Harmonic] employees raw:', JSON.stringify(empData).slice(0, 1000));
 
           const employees = empData?.results || empData?.employees || (Array.isArray(empData) ? empData : []);
-          console.log('[Harmonic] employees raw:', JSON.stringify(empData).slice(0, 800));
-          console.log('[Harmonic] employees parsed count:', employees.length);
-          employees.slice(0,3).forEach((e,i) => console.log(`  [${i}] title="${e.title||e.current_company?.title||e.position||e.role}" name="${e.person?.full_name||e.full_name||e.name}" id="${e.person?.id||e.person_id||e.id}"`));
+          console.log('[Harmonic] count:', employees.length);
+          employees.slice(0,5).forEach((e,i) => {
+            const keys = Object.keys(e).join(',');
+            console.log(`  [${i}] keys=${keys} | title="${e.title||e.current_company?.title||e.position||e.role||'?'}" | name="${e.person?.full_name||e.full_name||e.name||'?'}" | person_id="${e.person?.id||e.person_id||e.id||'?'}"`);
+          });
+
           const getT = e => (e.title || e.current_company?.title || e.position || e.role || '').toLowerCase();
           const isCEO = e => { const t = getT(e); return t.includes('chief executive') || t === 'ceo' || t.includes('ceo,') || t.includes(' ceo') || t.startsWith('ceo'); };
           const ceo = employees.find(isCEO);
-          console.log('[Harmonic] CEO found:', ceo ? `"${getT(ceo)}" / ${ceo.person?.full_name||ceo.full_name||ceo.name}` : 'NONE');
+          console.log('[Harmonic] CEO:', ceo ? `"${getT(ceo)}" / ${ceo.person?.full_name||ceo.full_name||ceo.name}` : 'NOT FOUND');
 
           fnEl.placeholder = 'Jane Smith';
-          if (!ceo) { return; }
+          if (!ceo) return;
 
           const personObj  = ceo.person || ceo;
           const personId   = personObj.id || personObj.person_id || ceo.person_id;
           const personName = personObj.full_name || personObj.name || ceo.full_name || ceo.name || '';
           if (personName) fnEl.value = personName;
+          console.log('[Harmonic] personId:', personId, '| name:', personName);
 
           if (personId) {
             const persRes = await fetch(`${PROXY}?path=%2Fpersons%2F${personId}`);
             if (persRes.ok) {
               const pData = await persRes.json();
+              console.log('[Harmonic] person data:', JSON.stringify(pData).slice(0, 500));
               const emails = pData?.contact?.emails || pData?.emails || [];
               const email = emails.find(e => typeof e === 'object' && e.type === 'work')?.address
                          || (typeof emails[0] === 'string' ? emails[0] : emails[0]?.address)
                          || pData?.email || '';
+              console.log('[Harmonic] email found:', email || 'NONE');
               if (email) teEl.value = email;
             }
           }
 
           teEl.placeholder = 'jane@acme.com';
           if (checkGenFns[panelId]) checkGenFns[panelId](panelId);
+          const sendBtn = document.getElementById(`send-${panelId}`);
+          if (sendBtn) sendBtn.disabled = !(teEl.value.trim() && document.getElementById(`result-${panelId}`)?.classList.contains('active'));
 
-          // Update send button state
-          const hasEmail  = teEl.value.trim() !== '';
-          const hasResult = document.getElementById(`result-${panelId}`)?.classList.contains('active');
-          const sendBtn   = document.getElementById(`send-${panelId}`);
-          if (sendBtn) sendBtn.disabled = !(hasEmail && hasResult);
-
-        } catch {
+        } catch(err) {
+          console.error('[Harmonic] error:', err);
           fnEl.placeholder = 'Jane Smith';
           teEl.placeholder = 'jane@acme.com';
         }
@@ -1321,7 +1332,7 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     document.getElementById('csv-panel').style.display   = tab === 'csv'    ? 'block' : 'none';
   }
 
-  // ── CSV Upload & Harmonic enrichment ────────────────────────────────────
+  // ── CSV Upload ───────────────────────────────────────────────────────────
   document.getElementById('csv-file-input').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1333,55 +1344,47 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     const text = await file.text();
     const rows = parseCSV(text);
 
-    if (!rows.length) {
-      status.textContent = 'No rows found. Check your CSV has "name" and "website" columns.';
-      label.style.opacity = '1';
-      return;
-    }
-
-    status.textContent = `Found ${rows.length} companies — enriching with Harmonic…`;
-    setResultsState('loading');
-
-    const enriched = [];
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      status.textContent = `Enriching ${i + 1} / ${rows.length}: ${row.name || row.domain}…`;
-      try {
-        const co = await enrichFromCSVRow(row);
-        if (co) enriched.push(co);
-      } catch (err) {
-        console.warn('Enrich failed for', row, err);
-      }
-    }
-
     label.style.opacity = '1';
-    label.querySelector('span') && (label.querySelector('span').textContent = file.name);
+    e.target.value = '';
 
-    if (!enriched.length) {
-      status.textContent = 'No companies could be matched in Harmonic.';
-      setResultsState('empty');
+    if (!rows.length) {
+      status.textContent = 'No rows found. Check your CSV columns.';
       return;
     }
 
-    status.textContent = `✓ ${enriched.length} of ${rows.length} matched`;
-    renderResults(enriched);
-    // Reset file input so same file can be re-uploaded
-    e.target.value = '';
+    // Convert rows directly to card objects — no Harmonic lookup needed
+    const cards = rows.map(r => ({
+      name:       r.name,
+      domain:     r.domain,
+      ceoName:    r.founderName,
+      ceoEmail:   r.founderEmail,
+      stage:      '',
+      loc:        '',
+      id:         '',
+    }));
+
+    status.textContent = `✓ ${cards.length} companies loaded`;
+    renderResults(cards);
   });
 
   function parseCSV(text) {
     const lines = text.trim().split(/\r?\n/);
     if (lines.length < 2) return [];
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g,''));
-    const nameIdx    = headers.findIndex(h => h.includes('name') || h === 'company');
+    const nameIdx    = headers.findIndex(h => h === 'company' || h === 'company name' || h === 'startup' || h === 'startup name');
     const domainIdx  = headers.findIndex(h => h.includes('website') || h.includes('domain') || h.includes('url'));
+    const founderIdx = headers.findIndex(h => h.includes('founder') && h.includes('name') || h === 'founder' || h === 'ceo' || h === 'ceo name');
+    const emailIdx   = headers.findIndex(h => h.includes('email') || h.includes('founder email') || h.includes('ceo email'));
     if (nameIdx === -1 && domainIdx === -1) return [];
     return lines.slice(1).map(line => {
+      if (!line.trim()) return null;
       const cols = splitCSVLine(line);
-      const name   = nameIdx   >= 0 ? cols[nameIdx]?.replace(/['"]/g,'').trim()   : '';
-      const domain = domainIdx >= 0 ? cols[domainIdx]?.replace(/['"]/g,'').trim() : '';
-      return { name, domain: cleanDomain(domain) };
-    }).filter(r => r.name || r.domain);
+      const name        = nameIdx    >= 0 ? cols[nameIdx]?.replace(/['"]/g,'').trim()    : '';
+      const domain      = domainIdx  >= 0 ? cols[domainIdx]?.replace(/['"]/g,'').trim()  : '';
+      const founderName = founderIdx >= 0 ? cols[founderIdx]?.replace(/['"]/g,'').trim() : '';
+      const founderEmail= emailIdx   >= 0 ? cols[emailIdx]?.replace(/['"]/g,'').trim()   : '';
+      return { name, domain: cleanDomain(domain), founderName, founderEmail };
+    }).filter(Boolean).filter(r => r.name || r.domain);
   }
 
   function splitCSVLine(line) {
@@ -1400,81 +1403,7 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     return raw.replace(/^https?:\/\//,'').replace(/^www\./,'').split('/')[0].trim();
   }
 
-  async function enrichFromCSVRow(row) {
-    // 1. Lookup company by domain — Harmonic uses POST /companies with website_domain as query param
-    let co = null;
 
-    if (row.domain) {
-      // Try domain lookup via query param (correct Harmonic pattern)
-      const lookupRes = await fetch(`${PROXY}?path=%2Fcompanies&website_domain=${encodeURIComponent(row.domain)}`);
-      if (lookupRes.ok) {
-        const d = await lookupRes.json();
-        co = Array.isArray(d) ? d[0] : (d?.results?.[0] || d?.company || d);
-      }
-    }
-
-    // Fallback: natural language search by name
-    if (!co && row.name) {
-      const searchRes = await fetch(`${PROXY}?path=%2Fsearch%2Fsearch_agent&query=${encodeURIComponent(row.name)}&limit=1`);
-      if (searchRes.ok) {
-        const sd = await searchRes.json();
-        const urns = sd?.results || [];
-        if (urns.length) {
-          const id = (urns[0].urn || urns[0]).split(':').pop();
-          if (id) {
-            const coRes = await fetch(`${PROXY}?path=%2Fcompanies%2F${id}`);
-            if (coRes.ok) co = await coRes.json();
-          }
-        }
-      }
-    }
-
-    if (!co || (!co.id && !co.entity_id)) return null;
-
-    const id     = co.id || co.entity_id;
-    const name   = co.name || row.name || '';
-    const domain = co.website?.domain || row.domain || '';
-    const stage  = co.stage || co.company_stage_tag_v3 || '';
-    const city   = co.location?.city || '';
-    const country= co.location?.country || '';
-
-    if (!id) return { name, domain, stage, loc: [city,country].filter(Boolean).join(', '), ceoName:'', ceoEmail:'', id:'' };
-
-    // 2. Fetch CEO
-    let ceoName = '', ceoEmail = '', personId = null;
-    try {
-      const empRes = await fetch(`${PROXY}?path=%2Fcompanies%2F${id}%2Femployees&employee_group_type=FOUNDERS_AND_CEO&size=10`);
-      if (empRes.ok) {
-        const empData = await empRes.json();
-        const employees = empData?.results || empData?.employees || empData || [];
-        // Harmonic employee objects vary — try all known shapes
-        const getTitle = e => (e.title || e.current_company?.title || e.position || e.role || '').toLowerCase();
-        const isCEO = e => { const t = getTitle(e); return t.includes('chief executive') || t === 'ceo' || t.includes('ceo,') || t.includes(' ceo') || t.startsWith('ceo'); };
-        const ceo = employees.find(isCEO);
-        if (ceo) {
-          // Harmonic returns person as nested object or flat
-          const person = ceo.person || ceo;
-          personId = person.id || person.person_id || ceo.person_id;
-          ceoName  = person.full_name || person.name || ceo.full_name || ceo.name || '';
-        }
-      }
-    } catch(e) {}
-
-    // 3. Fetch email
-    if (personId) {
-      try {
-        const pRes = await fetch(`${PROXY}?path=%2Fpersons%2F${personId}`);
-        if (pRes.ok) {
-          const pData = await pRes.json();
-          const emails = pData?.contact?.emails || pData?.emails || [];
-          const emailObj = emails.find(e => typeof e === 'object' ? e.type === 'work' : false);
-          ceoEmail = emailObj?.address || (typeof emails[0]==='string' ? emails[0] : emails[0]?.address) || pData?.email || '';
-        }
-      } catch(e) {}
-    }
-
-    return { name, domain, stage, loc: [city,country].filter(Boolean).join(', '), ceoName, ceoEmail, id };
-  }
 
   document.getElementById('harmonic-search-btn').addEventListener('click', harmonicSearch);
   document.getElementById('h-keyword').addEventListener('keydown', e => { if (e.key === 'Enter') harmonicSearch(); });
