@@ -409,6 +409,41 @@
       border-right: 1px solid var(--gold-border);
       display: flex; flex-direction: column;
       overflow: hidden;
+      transition: width 0.25s ease;
+    }
+    .harmonic-sidebar.collapsed {
+      width: 36px;
+    }
+    .harmonic-sidebar.collapsed .sidebar-body {
+      opacity: 0; pointer-events: none;
+    }
+    .sidebar-body {
+      display: flex; flex-direction: column; flex: 1; overflow: hidden;
+      transition: opacity 0.15s ease;
+    }
+    .collapse-btn {
+      position: absolute; bottom: 12px; left: 0; right: 0;
+      display: flex; justify-content: center;
+    }
+    .sidebar-head { position: relative; }
+    .collapse-toggle {
+      position: absolute; top: 50%; right: 10px; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; padding: 4px;
+      color: rgba(201,168,76,0.6); transition: color 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .collapse-toggle:hover { color: var(--gold); }
+    .sidebar-collapsed-tab {
+      display: none; flex-direction: column; align-items: center;
+      gap: 6px; padding: 14px 0; cursor: pointer;
+    }
+    .harmonic-sidebar.collapsed .sidebar-collapsed-tab { display: flex; }
+    .harmonic-sidebar.collapsed .sidebar-head { padding: 10px 0; display:flex; justify-content:center; }
+    .harmonic-sidebar.collapsed .collapse-toggle { position: static; transform: none; }
+    .collapsed-label {
+      writing-mode: vertical-rl; text-orientation: mixed;
+      font-family: var(--font-ui); font-size: 9px; letter-spacing: .1em;
+      text-transform: uppercase; color: rgba(201,168,76,0.5);
     }
 
     .sidebar-head {
@@ -445,6 +480,21 @@
     }
     .sf-field select option { background: var(--ink3); }
 
+    .sidebar-tabs { display:flex; gap:4px; padding: 8px 13px 0; }
+    .stab {
+      flex:1; padding:5px 0; font-family:var(--font-ui); font-size:9px; letter-spacing:.08em;
+      text-transform:uppercase; background:transparent; border:1px solid rgba(201,168,76,0.25);
+      color:rgba(245,240,232,0.45); border-radius:3px; cursor:pointer; transition:all .2s;
+    }
+    .stab.active { background:rgba(201,168,76,0.15); border-color:var(--gold); color:var(--gold); }
+    .stab:hover:not(.active) { color:rgba(245,240,232,0.7); border-color:rgba(201,168,76,0.45); }
+    .csv-upload-label {
+      display:flex; align-items:center; gap:7px; padding:9px 12px;
+      border:1px dashed rgba(201,168,76,0.4); border-radius:4px; cursor:pointer;
+      font-family:var(--font-ui); font-size:10px; color:rgba(245,240,232,0.6);
+      letter-spacing:.06em; text-transform:uppercase; transition:all .2s;
+    }
+    .csv-upload-label:hover { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.07); }
     .search-btn {
       width: 100%; padding: 8px;
       background: linear-gradient(135deg, var(--gold) 0%, #9a7218 100%);
@@ -603,14 +653,24 @@
 <div class="main-content">
 
   <!-- ── HARMONIC SIDEBAR ── -->
-  <div class="harmonic-sidebar">
+  <div class="harmonic-sidebar" id="harmonic-sidebar">
     <div class="sidebar-head">
       <div class="sidebar-title">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Company Search
       </div>
       <div class="sidebar-sub">Powered by Harmonic · drag to populate</div>
+      <div class="sidebar-tabs">
+        <button class="stab active" id="stab-search" onclick="switchTab('search')">Search</button>
+        <button class="stab" id="stab-csv" onclick="switchTab('csv')">CSV Upload</button>
+      </div>
+      <button class="collapse-toggle" id="collapse-toggle" title="Collapse sidebar">
+        <svg id="collapse-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
     </div>
+    <div class="sidebar-body">
 
     <div class="search-form">
       <div class="sf-field">
@@ -642,6 +702,18 @@
       </button>
     </div>
 
+    <!-- CSV Upload Panel -->
+    <div id="csv-panel" style="display:none; padding:12px 13px; border-bottom:1px solid var(--gold-border); flex-shrink:0;">
+      <div class="sf-label" style="margin-bottom:6px;">Upload a CSV with company names &amp; websites</div>
+      <div class="sf-label" style="opacity:0.5; margin-bottom:10px; font-size:9px; text-transform:none; letter-spacing:0;">Columns: <code style="color:var(--gold)">name</code> and <code style="color:var(--gold)">website</code> (or <code style="color:var(--gold)">domain</code>)</div>
+      <label class="csv-upload-label" id="csv-upload-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Choose CSV file
+        <input type="file" id="csv-file-input" accept=".csv" style="display:none" />
+      </label>
+      <div id="csv-status" style="font-size:10px; color:var(--gold); margin-top:8px; font-family:var(--font-ui); min-height:14px;"></div>
+    </div>
+
     <div class="results-area" id="results-area">
       <div class="results-empty" id="results-empty">
         <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
@@ -658,7 +730,7 @@
       <div class="results-count" id="results-count"></div>
       <div id="results-list"></div>
     </div>
-  </div>
+    </div><!-- /sidebar-body -->
 
   <!-- ── 4-PANEL GRID ── -->
   <div class="panels-grid" id="panels-grid"></div>
@@ -1203,12 +1275,24 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         document.getElementById(`sn-${panelId}`).value = name;
         const website = domain ? (domain.startsWith('http') ? domain : 'https://' + domain) : '';
         document.getElementById(`sw-${panelId}`).value = website;
-        if (checkGenFns[panelId]) checkGenFns[panelId](panelId);
 
-        // Now fetch CEO + email
-        if (!id) return;
         const fnEl = document.getElementById(`fn-${panelId}`);
         const teEl = document.getElementById(`te-${panelId}`);
+
+        // If CSV pre-enriched, fill immediately and skip API calls
+        if (ceoName || ceoEmail) {
+          if (ceoName)  fnEl.value = ceoName;
+          if (ceoEmail) teEl.value = ceoEmail;
+          fnEl.placeholder = 'Jane Smith';
+          teEl.placeholder = 'jane@acme.com';
+          if (checkGenFns[panelId]) checkGenFns[panelId](panelId);
+          return;
+        }
+
+        if (checkGenFns[panelId]) checkGenFns[panelId](panelId);
+
+        // Otherwise fetch CEO + email from Harmonic
+        if (!id) return;
         fnEl.value = ''; fnEl.placeholder = 'Looking up…';
         teEl.value = ''; teEl.placeholder = 'Looking up…';
 
@@ -1265,6 +1349,162 @@ STARTUP_WEBSITE: ${startupWebsite}`;
   }
 
   // Wire up search button
+  // ── Sidebar collapse ─────────────────────────────────────────────────────
+  document.getElementById('collapse-toggle').addEventListener('click', () => {
+    const sidebar = document.getElementById('harmonic-sidebar');
+    const icon = document.getElementById('collapse-icon');
+    const isCollapsed = sidebar.classList.toggle('collapsed');
+    // Flip arrow direction
+    icon.innerHTML = isCollapsed
+      ? '<polyline points="9 18 15 12 9 6"/>'   // right-pointing = expand
+      : '<polyline points="15 18 9 12 15 6"/>'; // left-pointing = collapse
+  });
+
+  // ── Tab switcher ────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    document.getElementById('stab-search').classList.toggle('active', tab === 'search');
+    document.getElementById('stab-csv').classList.toggle('active', tab === 'csv');
+    document.querySelector('.search-form').style.display = tab === 'search' ? 'flex' : 'none';
+    document.getElementById('csv-panel').style.display   = tab === 'csv'    ? 'block' : 'none';
+  }
+
+  // ── CSV Upload & Harmonic enrichment ────────────────────────────────────
+  document.getElementById('csv-file-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const label = document.getElementById('csv-upload-label');
+    const status = document.getElementById('csv-status');
+    label.style.opacity = '0.5';
+    status.textContent = 'Parsing CSV…';
+
+    const text = await file.text();
+    const rows = parseCSV(text);
+
+    if (!rows.length) {
+      status.textContent = 'No rows found. Check your CSV has "name" and "website" columns.';
+      label.style.opacity = '1';
+      return;
+    }
+
+    status.textContent = `Found ${rows.length} companies — enriching with Harmonic…`;
+    setResultsState('loading');
+
+    const enriched = [];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      status.textContent = `Enriching ${i + 1} / ${rows.length}: ${row.name || row.domain}…`;
+      try {
+        const co = await enrichFromCSVRow(row);
+        if (co) enriched.push(co);
+      } catch (err) {
+        console.warn('Enrich failed for', row, err);
+      }
+    }
+
+    label.style.opacity = '1';
+    label.querySelector('span') && (label.querySelector('span').textContent = file.name);
+
+    if (!enriched.length) {
+      status.textContent = 'No companies could be matched in Harmonic.';
+      setResultsState('empty');
+      return;
+    }
+
+    status.textContent = `✓ ${enriched.length} of ${rows.length} matched`;
+    renderResults(enriched);
+    // Reset file input so same file can be re-uploaded
+    e.target.value = '';
+  });
+
+  function parseCSV(text) {
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g,''));
+    const nameIdx    = headers.findIndex(h => h.includes('name') || h === 'company');
+    const domainIdx  = headers.findIndex(h => h.includes('website') || h.includes('domain') || h.includes('url'));
+    if (nameIdx === -1 && domainIdx === -1) return [];
+    return lines.slice(1).map(line => {
+      const cols = splitCSVLine(line);
+      const name   = nameIdx   >= 0 ? cols[nameIdx]?.replace(/['"]/g,'').trim()   : '';
+      const domain = domainIdx >= 0 ? cols[domainIdx]?.replace(/['"]/g,'').trim() : '';
+      return { name, domain: cleanDomain(domain) };
+    }).filter(r => r.name || r.domain);
+  }
+
+  function splitCSVLine(line) {
+    const result = []; let cur = ''; let inQ = false;
+    for (const ch of line) {
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { result.push(cur); cur = ''; }
+      else cur += ch;
+    }
+    result.push(cur);
+    return result;
+  }
+
+  function cleanDomain(raw) {
+    if (!raw) return '';
+    return raw.replace(/^https?:\/\//,'').replace(/^www\./,'').split('/')[0].trim();
+  }
+
+  async function enrichFromCSVRow(row) {
+    // 1. Lookup company by domain via POST /companies
+    const lookupBody = {};
+    if (row.domain) lookupBody.website_domain = row.domain;
+    else if (row.name) lookupBody.name = row.name;
+
+    const lookupRes = await fetch(`${PROXY}?path=%2Fcompanies`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(lookupBody)
+    });
+    if (!lookupRes.ok) return null;
+    const coData = await lookupRes.json();
+
+    const co = Array.isArray(coData) ? coData[0] : coData;
+    if (!co) return null;
+
+    const id     = co.id || co.entity_id;
+    const name   = co.name || row.name || '';
+    const domain = co.website?.domain || row.domain || '';
+    const stage  = co.stage || co.company_stage_tag_v3 || '';
+    const city   = co.location?.city || '';
+    const country= co.location?.country || '';
+
+    if (!id) return { name, domain, stage, loc: [city,country].filter(Boolean).join(', '), ceoName:'', ceoEmail:'', id:'' };
+
+    // 2. Fetch CEO
+    let ceoName = '', ceoEmail = '', personId = null;
+    try {
+      const empRes = await fetch(`${PROXY}?path=%2Fcompanies%2F${id}%2Femployees&employee_group_type=FOUNDERS_AND_CEO&size=10`);
+      if (empRes.ok) {
+        const empData = await empRes.json();
+        const employees = empData?.results || empData?.employees || empData || [];
+        const isCEO = e => { const t=(e.title||e.role||e.position||'').toLowerCase(); return t.includes('chief executive')||t==='ceo'||t.startsWith('ceo,')||t.startsWith('ceo '); };
+        const ceo = employees.find(isCEO);
+        if (ceo) {
+          personId = ceo.person?.id || ceo.person_id || ceo.id;
+          ceoName  = ceo.person?.full_name || ceo.full_name || ceo.name || '';
+        }
+      }
+    } catch(e) {}
+
+    // 3. Fetch email
+    if (personId) {
+      try {
+        const pRes = await fetch(`${PROXY}?path=%2Fpersons%2F${personId}`);
+        if (pRes.ok) {
+          const pData = await pRes.json();
+          const emails = pData?.contact?.emails || pData?.emails || [];
+          const emailObj = emails.find(e => typeof e === 'object' ? e.type === 'work' : false);
+          ceoEmail = emailObj?.address || (typeof emails[0]==='string' ? emails[0] : emails[0]?.address) || pData?.email || '';
+        }
+      } catch(e) {}
+    }
+
+    return { name, domain, stage, loc: [city,country].filter(Boolean).join(', '), ceoName, ceoEmail, id };
+  }
+
   document.getElementById('harmonic-search-btn').addEventListener('click', harmonicSearch);
   document.getElementById('h-keyword').addEventListener('keydown', e => { if (e.key === 'Enter') harmonicSearch(); });
 
