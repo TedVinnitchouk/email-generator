@@ -1081,19 +1081,14 @@ STARTUP_WEBSITE: ${startupWebsite}`;
       const stg = document.getElementById('h-stage').value;
       const loc = document.getElementById('h-location').value.trim();
 
-      const rules = [];
-      if (kw)  rules.push({ field: 'tags_v2.text_value', filter_operator: 'contains', operator: 'or', value: kw });
-      if (loc) rules.push({ field: 'location.city', filter_operator: 'contains', operator: 'and', value: loc });
-      const stageMap = {'Pre-Seed':'PRE_SEED','Seed':'SEED','Series A':'SERIES_A','Series B':'SERIES_B','Series C+':'SERIES_C'};
-      if (stg && stageMap[stg]) rules.push({ field: 'stage', filter_operator: 'is_one_of', operator: 'and', value: [stageMap[stg]] });
+      // Build natural language query for /search/search_agent (GET)
+      const parts = [];
+      if (kw)  parts.push(kw);
+      if (stg && stg !== 'Any stage') parts.push(stg + ' stage');
+      if (loc) parts.push('in ' + loc);
+      const nlQuery = encodeURIComponent(parts.length ? parts.join(' ') : 'early stage startups');
 
-      const body = { filter: { operator: 'and', rules }, pagination: { start: 0, page_size: 25 } };
-
-      const res = await fetch(`${PROXY}?path=%2Fcompanies%2Fsearch`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
+      const res = await fetch(`${PROXY}?path=%2Fsearch%2Fsearch_agent&query=${nlQuery}&page=1&limit=25`);
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
