@@ -445,17 +445,7 @@
     }
     .sf-field select option { background: var(--ink3); }
 
-    .ac-dropdown {
-    position: absolute; top: 100%; left: 0; right: 0; z-index: 200;
-    background: #0d1a2e; border: 1px solid rgba(201,168,76,0.3);
-    border-radius: 4px; max-height: 180px; overflow-y: auto; margin-top: 2px;
-  }
-  .ac-item {
-    padding: 7px 10px; font-size: 11px; color: var(--star-white); cursor: pointer;
-    font-family: var(--font-ui); border-bottom: 1px solid rgba(255,255,255,0.05);
-  }
-  .ac-item:hover { background: rgba(201,168,76,0.15); color: var(--gold); }
-  .search-btn {
+    .search-btn {
       width: 100%; padding: 8px;
       background: linear-gradient(135deg, var(--gold) 0%, #9a7218 100%);
       border: none; border-radius: 2px; color: var(--ink);
@@ -625,10 +615,7 @@
     <div class="search-form">
       <div class="sf-field">
         <div class="sf-label">Keywords / Sector</div>
-        <div class="ac-wrap" style="position:relative">
-          <input id="h-keyword" type="text" placeholder="e.g. AI security, fintech" autocomplete="off" />
-          <div id="h-keyword-ac" class="ac-dropdown" style="display:none"></div>
-        </div>
+        <input id="h-keyword" type="text" placeholder="e.g. AI security, fintech" />
       </div>
       <div class="sf-field">
         <div class="sf-label">Stage</div>
@@ -643,10 +630,7 @@
       </div>
       <div class="sf-field">
         <div class="sf-label">Location</div>
-        <div class="ac-wrap" style="position:relative">
-          <input id="h-location" type="text" placeholder="e.g. New York, London" autocomplete="off" />
-          <div id="h-location-ac" class="ac-dropdown" style="display:none"></div>
-        </div>
+        <input id="h-location" type="text" placeholder="e.g. New York, London" />
       </div>
       <div class="sf-field">
         <div class="sf-label">Investor</div>
@@ -1281,48 +1265,6 @@ STARTUP_WEBSITE: ${startupWebsite}`;
   }
 
   // Wire up search button
-  // ── Autocomplete for keyword & location ─────────────────────────────────
-  async function fetchTypeahead(query, field) {
-    if (!query || query.length < 2) return [];
-    try {
-      const r = await fetch(`${PROXY}?path=%2Fsearch%2Ftypeahead&query=${encodeURIComponent(query)}&type=${field}`);
-      if (!r.ok) return [];
-      const d = await r.json();
-      return d?.results || d?.suggestions || d || [];
-    } catch { return []; }
-  }
-
-  function setupAC(inputId, dropId, field) {
-    const inp = document.getElementById(inputId);
-    const drop = document.getElementById(dropId);
-    let debounce;
-    inp.addEventListener('input', () => {
-      clearTimeout(debounce);
-      const q = inp.value.trim();
-      if (!q) { drop.style.display = 'none'; return; }
-      debounce = setTimeout(async () => {
-        const items = await fetchTypeahead(q, field);
-        if (!items.length) { drop.style.display = 'none'; return; }
-        drop.innerHTML = items.slice(0, 8).map(it => {
-          const label = typeof it === 'string' ? it : (it.name || it.label || it.text || JSON.stringify(it));
-          return `<div class="ac-item" data-val="${label.replace(/"/g,'&quot;')}">${label}</div>`;
-        }).join('');
-        drop.style.display = 'block';
-        drop.querySelectorAll('.ac-item').forEach(el => {
-          el.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            inp.value = el.dataset.val;
-            drop.style.display = 'none';
-          });
-        });
-      }, 300);
-    });
-    inp.addEventListener('blur', () => setTimeout(() => drop.style.display = 'none', 200));
-  }
-
-  setupAC('h-keyword', 'h-keyword-ac', 'company');
-  setupAC('h-location', 'h-location-ac', 'location');
-
   document.getElementById('harmonic-search-btn').addEventListener('click', harmonicSearch);
   document.getElementById('h-keyword').addEventListener('keydown', e => { if (e.key === 'Enter') harmonicSearch(); });
 
