@@ -1031,7 +1031,7 @@ STARTUP_WEBSITE: ${startupWebsite}`;
   const H_HEADERS = { 'apikey': H_KEY, 'Content-Type': 'application/json' };
 
   // Proxy URL — update this after deploying to Vercel
-  const PROXY = 'https://email-generator-flax.vercel.app/';
+  const PROXY = 'https://email-generator-flax.vercel.app/api/harmonic';
 
   async function hFetch(path, options = {}) {
     // Build proxy URL: path becomes a query param
