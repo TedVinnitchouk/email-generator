@@ -693,6 +693,7 @@
       <div id="results-list"></div>
     </div>
 
+  </div><!-- /harmonic-sidebar -->
 
   <!-- ── 4-PANEL GRID ── -->
   <div class="panels-grid" id="panels-grid"></div>
@@ -1264,29 +1265,29 @@ STARTUP_WEBSITE: ${startupWebsite}`;
           if (!empRes.ok) throw new Error('employees fetch failed');
           const empData = await empRes.json();
 
-          const employees = empData?.results || empData?.employees || empData || [];
-          // Only use confirmed CEO — do not fall back to generic founder
-          const isCEO = e => {
-            const t = (e.title || e.role || e.position || '').toLowerCase();
-            return t.includes('chief executive') || t === 'ceo' || t.startsWith('ceo,') || t.startsWith('ceo ');
-          };
+          const employees = empData?.results || empData?.employees || (Array.isArray(empData) ? empData : []);
+          console.log('[Harmonic] employees raw:', JSON.stringify(empData).slice(0, 800));
+          console.log('[Harmonic] employees parsed count:', employees.length);
+          employees.slice(0,3).forEach((e,i) => console.log(`  [${i}] title="${e.title||e.current_company?.title||e.position||e.role}" name="${e.person?.full_name||e.full_name||e.name}" id="${e.person?.id||e.person_id||e.id}"`));
+          const getT = e => (e.title || e.current_company?.title || e.position || e.role || '').toLowerCase();
+          const isCEO = e => { const t = getT(e); return t.includes('chief executive') || t === 'ceo' || t.includes('ceo,') || t.includes(' ceo') || t.startsWith('ceo'); };
           const ceo = employees.find(isCEO);
+          console.log('[Harmonic] CEO found:', ceo ? `"${getT(ceo)}" / ${ceo.person?.full_name||ceo.full_name||ceo.name}` : 'NONE');
 
           fnEl.placeholder = 'Jane Smith';
-          if (!ceo) { return; }   // leave blank if no confirmed CEO
+          if (!ceo) { return; }
 
-          const personId   = ceo.person?.id || ceo.person_id || ceo.id;
-          const personName = ceo.person?.full_name || ceo.full_name || ceo.name || '';
+          const personObj  = ceo.person || ceo;
+          const personId   = personObj.id || personObj.person_id || ceo.person_id;
+          const personName = personObj.full_name || personObj.name || ceo.full_name || ceo.name || '';
           if (personName) fnEl.value = personName;
 
-          // Only fetch + set email if we have a confirmed CEO
           if (personId) {
             const persRes = await fetch(`${PROXY}?path=%2Fpersons%2F${personId}`);
             if (persRes.ok) {
               const pData = await persRes.json();
               const emails = pData?.contact?.emails || pData?.emails || [];
-              // prefer work email
-              const email = emails.find(e => typeof e === 'object' ? e.type === 'work' : false)?.address
+              const email = emails.find(e => typeof e === 'object' && e.type === 'work')?.address
                          || (typeof emails[0] === 'string' ? emails[0] : emails[0]?.address)
                          || pData?.email || '';
               if (email) teEl.value = email;
@@ -1446,11 +1447,15 @@ STARTUP_WEBSITE: ${startupWebsite}`;
       if (empRes.ok) {
         const empData = await empRes.json();
         const employees = empData?.results || empData?.employees || empData || [];
-        const isCEO = e => { const t=(e.title||e.role||e.position||'').toLowerCase(); return t.includes('chief executive')||t==='ceo'||t.startsWith('ceo,')||t.startsWith('ceo '); };
+        // Harmonic employee objects vary — try all known shapes
+        const getTitle = e => (e.title || e.current_company?.title || e.position || e.role || '').toLowerCase();
+        const isCEO = e => { const t = getTitle(e); return t.includes('chief executive') || t === 'ceo' || t.includes('ceo,') || t.includes(' ceo') || t.startsWith('ceo'); };
         const ceo = employees.find(isCEO);
         if (ceo) {
-          personId = ceo.person?.id || ceo.person_id || ceo.id;
-          ceoName  = ceo.person?.full_name || ceo.full_name || ceo.name || '';
+          // Harmonic returns person as nested object or flat
+          const person = ceo.person || ceo;
+          personId = person.id || person.person_id || ceo.person_id;
+          ceoName  = person.full_name || person.name || ceo.full_name || ceo.name || '';
         }
       }
     } catch(e) {}
