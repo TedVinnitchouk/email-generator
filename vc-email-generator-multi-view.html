@@ -1093,12 +1093,31 @@ STARTUP_WEBSITE: ${startupWebsite}`;
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 
-      const companies = data?.results || data?.companies || data?.data || [];
-      if (!companies.length) {
+      const urns = data?.results || [];
+      if (!urns.length) {
         setResultsState('error', 'No results found. Try different keywords or filters.');
         return;
       }
 
+      // Extract company IDs from URNs like "urn:harmonic:company:12584848"
+      const ids = urns.slice(0, 10).map(r => {
+        const urn = r.urn || r;
+        return urn.split(':').pop();
+      }).filter(Boolean);
+
+      // Fetch company details in parallel
+      const details = await Promise.all(ids.map(async id => {
+        try {
+          const r2 = await fetch(`${PROXY}?path=%2Fcompanies%2F${id}`);
+          return r2.ok ? await r2.json() : null;
+        } catch { return null; }
+      }));
+
+      const companies = details.filter(Boolean);
+      if (!companies.length) {
+        setResultsState('error', 'No company details found.');
+        return;
+      }
       renderResults(companies);
     } catch (err) {
       const msg = `Search failed: ${err.message} (proxy: ${PROXY})`;
