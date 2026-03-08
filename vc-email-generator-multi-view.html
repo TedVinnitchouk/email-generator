@@ -1077,9 +1077,23 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     setResultsState('loading');
 
     try {
-      // Try POST search endpoint first
-      const encodedQuery = encodeURIComponent(query);
-      const res = await fetch(`${PROXY}?path=%2Fcompanies%2Fsearch&query=${encodedQuery}&page_size=25`);
+      const kw  = document.getElementById('h-keyword').value.trim();
+      const stg = document.getElementById('h-stage').value;
+      const loc = document.getElementById('h-location').value.trim();
+
+      const rules = [];
+      if (kw)  rules.push({ field: 'tags_v2.text_value', filter_operator: 'contains', operator: 'or', value: kw });
+      if (loc) rules.push({ field: 'location.city', filter_operator: 'contains', operator: 'and', value: loc });
+      const stageMap = {'Pre-Seed':'PRE_SEED','Seed':'SEED','Series A':'SERIES_A','Series B':'SERIES_B','Series C+':'SERIES_C'};
+      if (stg && stageMap[stg]) rules.push({ field: 'stage', filter_operator: 'is_one_of', operator: 'and', value: [stageMap[stg]] });
+
+      const body = { filter: { operator: 'and', rules }, pagination: { start: 0, page_size: 25 } };
+
+      const res = await fetch(`${PROXY}?path=%2Fcompanies%2Fsearch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -1092,7 +1106,6 @@ STARTUP_WEBSITE: ${startupWebsite}`;
 
       renderResults(companies);
     } catch (err) {
-      // If CORS or network error, show helpful message
       const msg = err.message.includes('fetch') || err.message.includes('Failed')
         ? 'CORS blocked — Harmonic API requires a backend proxy for browser requests. Contact your dev to set up a proxy, or use the manual input fields on each panel.'
         : `Search failed: ${err.message}`;
