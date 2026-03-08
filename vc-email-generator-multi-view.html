@@ -445,7 +445,17 @@
     }
     .sf-field select option { background: var(--ink3); }
 
-    .search-btn {
+    .ac-dropdown {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 200;
+    background: #0d1a2e; border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 4px; max-height: 180px; overflow-y: auto; margin-top: 2px;
+  }
+  .ac-item {
+    padding: 7px 10px; font-size: 11px; color: var(--star-white); cursor: pointer;
+    font-family: var(--font-ui); border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .ac-item:hover { background: rgba(201,168,76,0.15); color: var(--gold); }
+  .search-btn {
       width: 100%; padding: 8px;
       background: linear-gradient(135deg, var(--gold) 0%, #9a7218 100%);
       border: none; border-radius: 2px; color: var(--ink);
@@ -615,7 +625,10 @@
     <div class="search-form">
       <div class="sf-field">
         <div class="sf-label">Keywords / Sector</div>
-        <input id="h-keyword" type="text" placeholder="e.g. AI security, fintech" />
+        <div class="ac-wrap" style="position:relative">
+          <input id="h-keyword" type="text" placeholder="e.g. AI security, fintech" autocomplete="off" />
+          <div id="h-keyword-ac" class="ac-dropdown" style="display:none"></div>
+        </div>
       </div>
       <div class="sf-field">
         <div class="sf-label">Stage</div>
@@ -630,7 +643,10 @@
       </div>
       <div class="sf-field">
         <div class="sf-label">Location</div>
-        <input id="h-location" type="text" placeholder="e.g. New York, London" />
+        <div class="ac-wrap" style="position:relative">
+          <input id="h-location" type="text" placeholder="e.g. New York, London" autocomplete="off" />
+          <div id="h-location-ac" class="ac-dropdown" style="display:none"></div>
+        </div>
       </div>
       <div class="sf-field">
         <div class="sf-label">Investor</div>
@@ -1083,12 +1099,13 @@ STARTUP_WEBSITE: ${startupWebsite}`;
 
       // Build natural language query for /search/search_agent (GET)
       const parts = [];
-      if (kw)  parts.push(kw);
-      if (stg && stg !== 'Any stage') parts.push(stg + ' stage');
+      if (kw)  parts.push(kw);                               // keyword first for weight
+      if (stg && stg !== 'Any stage') parts.push(stg);
       if (loc) parts.push('in ' + loc);
+      if (inv) parts.push('backed by ' + inv);
       const nlQuery = encodeURIComponent(parts.length ? parts.join(' ') : 'early stage startups');
 
-      const res = await fetch(`${PROXY}?path=%2Fsearch%2Fsearch_agent&query=${nlQuery}&page=1&limit=25`);
+      const res = await fetch(`${PROXY}?path=%2Fsearch%2Fsearch_agent&query=${nlQuery}&limit=25`);
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -1218,24 +1235,31 @@ STARTUP_WEBSITE: ${startupWebsite}`;
           const empData = await empRes.json();
 
           const employees = empData?.results || empData?.employees || empData || [];
-          const ceo = employees.find(e => (e.title || e.role || '').toLowerCase().includes('ceo'))
-                   || employees.find(e => (e.title || e.role || '').toLowerCase().includes('chief executive'))
-                   || employees.find(e => (e.title || e.role || '').toLowerCase().includes('founder'))
-                   || employees[0];
+          // Only use confirmed CEO — do not fall back to generic founder
+          const isCEO = e => {
+            const t = (e.title || e.role || e.position || '').toLowerCase();
+            return t.includes('chief executive') || t === 'ceo' || t.startsWith('ceo,') || t.startsWith('ceo ');
+          };
+          const ceo = employees.find(isCEO);
 
-          if (!ceo) { fnEl.placeholder = 'Jane Smith'; return; }
+          fnEl.placeholder = 'Jane Smith';
+          if (!ceo) { return; }   // leave blank if no confirmed CEO
 
           const personId   = ceo.person?.id || ceo.person_id || ceo.id;
           const personName = ceo.person?.full_name || ceo.full_name || ceo.name || '';
-          if (personName) { fnEl.value = personName; fnEl.placeholder = 'Jane Smith'; }
+          if (personName) fnEl.value = personName;
 
-          // Fetch email
+          // Only fetch + set email if we have a confirmed CEO
           if (personId) {
             const persRes = await fetch(`${PROXY}?path=%2Fpersons%2F${personId}`);
             if (persRes.ok) {
               const pData = await persRes.json();
-              const email = pData?.contact?.emails?.[0] || pData?.emails?.[0] || pData?.email || '';
-              if (email) { teEl.value = email; }
+              const emails = pData?.contact?.emails || pData?.emails || [];
+              // prefer work email
+              const email = emails.find(e => typeof e === 'object' ? e.type === 'work' : false)?.address
+                         || (typeof emails[0] === 'string' ? emails[0] : emails[0]?.address)
+                         || pData?.email || '';
+              if (email) teEl.value = email;
             }
           }
 
@@ -1257,6 +1281,48 @@ STARTUP_WEBSITE: ${startupWebsite}`;
   }
 
   // Wire up search button
+  // ── Autocomplete for keyword & location ─────────────────────────────────
+  async function fetchTypeahead(query, field) {
+    if (!query || query.length < 2) return [];
+    try {
+      const r = await fetch(`${PROXY}?path=%2Fsearch%2Ftypeahead&query=${encodeURIComponent(query)}&type=${field}`);
+      if (!r.ok) return [];
+      const d = await r.json();
+      return d?.results || d?.suggestions || d || [];
+    } catch { return []; }
+  }
+
+  function setupAC(inputId, dropId, field) {
+    const inp = document.getElementById(inputId);
+    const drop = document.getElementById(dropId);
+    let debounce;
+    inp.addEventListener('input', () => {
+      clearTimeout(debounce);
+      const q = inp.value.trim();
+      if (!q) { drop.style.display = 'none'; return; }
+      debounce = setTimeout(async () => {
+        const items = await fetchTypeahead(q, field);
+        if (!items.length) { drop.style.display = 'none'; return; }
+        drop.innerHTML = items.slice(0, 8).map(it => {
+          const label = typeof it === 'string' ? it : (it.name || it.label || it.text || JSON.stringify(it));
+          return `<div class="ac-item" data-val="${label.replace(/"/g,'&quot;')}">${label}</div>`;
+        }).join('');
+        drop.style.display = 'block';
+        drop.querySelectorAll('.ac-item').forEach(el => {
+          el.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            inp.value = el.dataset.val;
+            drop.style.display = 'none';
+          });
+        });
+      }, 300);
+    });
+    inp.addEventListener('blur', () => setTimeout(() => drop.style.display = 'none', 200));
+  }
+
+  setupAC('h-keyword', 'h-keyword-ac', 'company');
+  setupAC('h-location', 'h-location-ac', 'location');
+
   document.getElementById('harmonic-search-btn').addEventListener('click', harmonicSearch);
   document.getElementById('h-keyword').addEventListener('keydown', e => { if (e.key === 'Enter') harmonicSearch(); });
 
