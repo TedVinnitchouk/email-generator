@@ -409,42 +409,8 @@
       border-right: 1px solid var(--gold-border);
       display: flex; flex-direction: column;
       overflow: hidden;
-      transition: width 0.25s ease;
     }
-    .harmonic-sidebar.collapsed {
-      width: 36px;
-    }
-    .harmonic-sidebar.collapsed .sidebar-body {
-      opacity: 0; pointer-events: none;
-    }
-    .sidebar-body {
-      display: flex; flex-direction: column; flex: 1; overflow: hidden;
-      transition: opacity 0.15s ease;
-    }
-    .collapse-btn {
-      position: absolute; bottom: 12px; left: 0; right: 0;
-      display: flex; justify-content: center;
-    }
-    .sidebar-head { position: relative; }
-    .collapse-toggle {
-      position: absolute; top: 50%; right: 10px; transform: translateY(-50%);
-      background: none; border: none; cursor: pointer; padding: 4px;
-      color: rgba(201,168,76,0.6); transition: color 0.2s;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .collapse-toggle:hover { color: var(--gold); }
-    .sidebar-collapsed-tab {
-      display: none; flex-direction: column; align-items: center;
-      gap: 6px; padding: 14px 0; cursor: pointer;
-    }
-    .harmonic-sidebar.collapsed .sidebar-collapsed-tab { display: flex; }
-    .harmonic-sidebar.collapsed .sidebar-head { padding: 10px 0; display:flex; justify-content:center; }
-    .harmonic-sidebar.collapsed .collapse-toggle { position: static; transform: none; }
-    .collapsed-label {
-      writing-mode: vertical-rl; text-orientation: mixed;
-      font-family: var(--font-ui); font-size: 9px; letter-spacing: .1em;
-      text-transform: uppercase; color: rgba(201,168,76,0.5);
-    }
+
 
     .sidebar-head {
       padding: 13px 14px 11px;
@@ -664,13 +630,9 @@
         <button class="stab active" id="stab-search" onclick="switchTab('search')">Search</button>
         <button class="stab" id="stab-csv" onclick="switchTab('csv')">CSV Upload</button>
       </div>
-      <button class="collapse-toggle" id="collapse-toggle" title="Collapse sidebar">
-        <svg id="collapse-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
-      </button>
+
     </div>
-    <div class="sidebar-body">
+
 
     <div class="search-form">
       <div class="sf-field">
@@ -730,7 +692,7 @@
       <div class="results-count" id="results-count"></div>
       <div id="results-list"></div>
     </div>
-    </div><!-- /sidebar-body -->
+
 
   <!-- ── 4-PANEL GRID ── -->
   <div class="panels-grid" id="panels-grid"></div>
@@ -1349,16 +1311,6 @@ STARTUP_WEBSITE: ${startupWebsite}`;
   }
 
   // Wire up search button
-  // ── Sidebar collapse ─────────────────────────────────────────────────────
-  document.getElementById('collapse-toggle').addEventListener('click', () => {
-    const sidebar = document.getElementById('harmonic-sidebar');
-    const icon = document.getElementById('collapse-icon');
-    const isCollapsed = sidebar.classList.toggle('collapsed');
-    // Flip arrow direction
-    icon.innerHTML = isCollapsed
-      ? '<polyline points="9 18 15 12 9 6"/>'   // right-pointing = expand
-      : '<polyline points="15 18 9 12 15 6"/>'; // left-pointing = collapse
-  });
 
   // ── Tab switcher ────────────────────────────────────────────────────────
   function switchTab(tab) {
@@ -1448,21 +1400,35 @@ STARTUP_WEBSITE: ${startupWebsite}`;
   }
 
   async function enrichFromCSVRow(row) {
-    // 1. Lookup company by domain via POST /companies
-    const lookupBody = {};
-    if (row.domain) lookupBody.website_domain = row.domain;
-    else if (row.name) lookupBody.name = row.name;
+    // 1. Lookup company by domain — Harmonic uses POST /companies with website_domain as query param
+    let co = null;
 
-    const lookupRes = await fetch(`${PROXY}?path=%2Fcompanies`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(lookupBody)
-    });
-    if (!lookupRes.ok) return null;
-    const coData = await lookupRes.json();
+    if (row.domain) {
+      // Try domain lookup via query param (correct Harmonic pattern)
+      const lookupRes = await fetch(`${PROXY}?path=%2Fcompanies&website_domain=${encodeURIComponent(row.domain)}`);
+      if (lookupRes.ok) {
+        const d = await lookupRes.json();
+        co = Array.isArray(d) ? d[0] : (d?.results?.[0] || d?.company || d);
+      }
+    }
 
-    const co = Array.isArray(coData) ? coData[0] : coData;
-    if (!co) return null;
+    // Fallback: natural language search by name
+    if (!co && row.name) {
+      const searchRes = await fetch(`${PROXY}?path=%2Fsearch%2Fsearch_agent&query=${encodeURIComponent(row.name)}&limit=1`);
+      if (searchRes.ok) {
+        const sd = await searchRes.json();
+        const urns = sd?.results || [];
+        if (urns.length) {
+          const id = (urns[0].urn || urns[0]).split(':').pop();
+          if (id) {
+            const coRes = await fetch(`${PROXY}?path=%2Fcompanies%2F${id}`);
+            if (coRes.ok) co = await coRes.json();
+          }
+        }
+      }
+    }
+
+    if (!co || (!co.id && !co.entity_id)) return null;
 
     const id     = co.id || co.entity_id;
     const name   = co.name || row.name || '';
