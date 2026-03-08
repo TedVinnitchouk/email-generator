@@ -1078,11 +1078,8 @@ STARTUP_WEBSITE: ${startupWebsite}`;
 
     try {
       // Try POST search endpoint first
-      const res = await fetch(`${PROXY}?path=%2Fcompanies%2Fsearch`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, pagination: { page_size: 25, start: 0 } })
-      });
+      const encodedQuery = encodeURIComponent(query);
+      const res = await fetch(`${PROXY}?path=%2Fcompanies%2Fsearch&query=${encodedQuery}&page_size=25`);
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
