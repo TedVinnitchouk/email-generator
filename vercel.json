@@ -3,5 +3,12 @@
     "api/harmonic.js": {
       "maxDuration": 15
     }
-  }
+  },
+  "routes": [
+    {
+      "src": "/api/harmonic(.*)",
+      "dest": "/api/harmonic.js",
+      "methods": ["GET", "POST", "OPTIONS"]
+    }
+  ]
 }
