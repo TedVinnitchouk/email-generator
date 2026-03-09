@@ -402,16 +402,14 @@
       position: relative; z-index: 1;
     }
 
-    /* ── HARMONIC SIDEBAR ── */
+    /* ── CSV SIDEBAR ── */
     .harmonic-sidebar {
-      width: 260px; flex-shrink: 0;
+      width: 220px; flex-shrink: 0;
       background: linear-gradient(180deg, rgba(9,17,32,0.99) 0%, rgba(6,12,24,0.99) 100%);
       border-right: 1px solid var(--gold-border);
       display: flex; flex-direction: column;
       overflow: hidden;
     }
-
-
     .sidebar-head {
       padding: 13px 14px 11px;
       border-bottom: 1px solid var(--gold-border);
@@ -420,40 +418,10 @@
     .sidebar-title {
       display: flex; align-items: center; gap: 7px;
       font-size: 7.5px; font-weight: 800; letter-spacing: 0.28em;
-      color: var(--gold); text-transform: uppercase; margin-bottom: 1px;
+      color: var(--gold); text-transform: uppercase; margin-bottom: 2px;
     }
-    .sidebar-title svg { opacity: 0.8; }
     .sidebar-sub { font-size: 9px; color: var(--text-muted); font-style: italic; font-family: 'Cormorant Garamond', serif; }
-
-    .search-form { padding: 11px 13px 10px; border-bottom: 1px solid var(--gold-border); flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
-
-    .sf-field { display: flex; flex-direction: column; gap: 3px; }
     .sf-label { font-size: 7px; font-weight: 700; letter-spacing: 0.2em; color: var(--text-muted); text-transform: uppercase; }
-    .sf-field input, .sf-field select {
-      width: 100%; background: rgba(255,255,255,0.03);
-      border: none; border-bottom: 1px solid rgba(201,168,76,0.18);
-      padding: 4px 3px; color: var(--text);
-      font-family: 'Montserrat', sans-serif; font-size: 11px;
-      outline: none; transition: border-color 0.2s;
-    }
-    .sf-field input::placeholder { color: var(--text-muted); font-size: 10px; }
-    .sf-field input:focus, .sf-field select:focus { border-bottom-color: var(--gold); }
-    .sf-field select {
-      appearance: none; cursor: pointer;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%23c9a84c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 2px center;
-      padding-right: 14px;
-    }
-    .sf-field select option { background: var(--ink3); }
-
-    .sidebar-tabs { display:flex; gap:4px; padding: 8px 13px 0; }
-    .stab {
-      flex:1; padding:5px 0; font-family:var(--font-ui); font-size:9px; letter-spacing:.08em;
-      text-transform:uppercase; background:transparent; border:1px solid rgba(201,168,76,0.25);
-      color:rgba(245,240,232,0.45); border-radius:3px; cursor:pointer; transition:all .2s;
-    }
-    .stab.active { background:rgba(201,168,76,0.15); border-color:var(--gold); color:var(--gold); }
-    .stab:hover:not(.active) { color:rgba(245,240,232,0.7); border-color:rgba(201,168,76,0.45); }
     .csv-upload-label {
       display:flex; align-items:center; gap:7px; padding:9px 12px;
       border:1px dashed rgba(201,168,76,0.4); border-radius:4px; cursor:pointer;
@@ -461,56 +429,18 @@
       letter-spacing:.06em; text-transform:uppercase; transition:all .2s;
     }
     .csv-upload-label:hover { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.07); }
-    .search-btn {
-      width: 100%; padding: 8px;
-      background: linear-gradient(135deg, var(--gold) 0%, #9a7218 100%);
-      border: none; border-radius: 2px; color: var(--ink);
-      font-family: 'Montserrat', sans-serif; font-size: 9px; font-weight: 800;
-      letter-spacing: 0.22em; text-transform: uppercase; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      transition: opacity 0.2s, box-shadow 0.2s;
-      box-shadow: 0 2px 12px rgba(201,168,76,0.25);
-    }
-    .search-btn:hover:not(:disabled) { box-shadow: 0 4px 20px rgba(201,168,76,0.45); }
-    .search-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* Results */
+    /* Company card */
     .results-area { flex: 1; overflow-y: auto; padding: 8px 0; }
     .results-area::-webkit-scrollbar { width: 2px; }
     .results-area::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); }
-
-    .results-empty {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 8px; height: 100%; opacity: 0.4;
-      padding: 20px;
-    }
-    .results-empty p { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 12px; color: var(--text-muted); text-align: center; line-height: 1.6; }
-
-    .results-loading {
-      display: none; flex-direction: column; align-items: center;
-      justify-content: center; gap: 12px; height: 100%;
-    }
-    .results-loading.active { display: flex; }
-    .results-loading p { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 12px; color: var(--text-muted); }
-
-    .results-error {
-      display: none; margin: 12px; padding: 10px 12px;
-      background: rgba(220,70,70,0.07);
-      border-left: 2px solid rgba(220,70,70,0.5);
-      font-size: 10px; color: #e89090; line-height: 1.5;
-    }
-    .results-error.visible { display: block; }
-
     .results-count {
       font-size: 7.5px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
       color: var(--text-muted); padding: 4px 13px 6px; display: none;
     }
     .results-count.visible { display: block; }
-
-    /* Company card */
     .company-card {
-      margin: 0 8px 5px;
-      padding: 9px 10px;
+      margin: 0 8px 5px; padding: 9px 10px;
       background: rgba(255,255,255,0.025);
       border: 1px solid rgba(201,168,76,0.12);
       border-radius: 3px; cursor: grab;
@@ -520,24 +450,13 @@
     .company-card:hover { background: rgba(201,168,76,0.07); border-color: rgba(201,168,76,0.3); }
     .company-card:active { cursor: grabbing; transform: scale(0.98); }
     .company-card.dragging { opacity: 0.5; transform: scale(0.97); }
-
     .card-drag-hint {
       position: absolute; top: 6px; right: 7px;
-      font-size: 8px; color: var(--text-muted); opacity: 0;
-      transition: opacity 0.15s;
+      font-size: 8px; color: var(--text-muted); opacity: 0; transition: opacity 0.15s;
     }
     .company-card:hover .card-drag-hint { opacity: 0.6; }
-
-    .card-name { font-size: 11.5px; font-weight: 600; color: var(--star-white); margin-bottom: 3px; line-height: 1.2; padding-right: 20px; }
-    .card-domain { font-size: 9px; color: var(--gold); opacity: 0.75; margin-bottom: 4px; font-family: 'Cormorant Garamond', serif; }
-    .card-tags { display: flex; gap: 4px; flex-wrap: wrap; }
-    .card-tag {
-      font-size: 7.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-      padding: 2px 6px; border-radius: 2px;
-    }
-    .tag-stage { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid rgba(201,168,76,0.2); }
-    .tag-location { background: rgba(100,150,220,0.08); color: #7ab0e0; border: 1px solid rgba(100,150,220,0.2); }
-    .card-desc { font-size: 9.5px; color: var(--text-muted); line-height: 1.45; margin-top: 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .card-name { font-size: 11.5px; font-weight: 600; color: var(--star-white); margin-bottom: 2px; line-height: 1.2; padding-right: 20px; }
+    .card-sub  { font-size: 9px; color: var(--text-muted); font-family: 'Cormorant Garamond', serif; }
 
     /* Drop zone highlight on panels */
     .panel.drag-over .panel-inputs { background: linear-gradient(160deg, rgba(201,168,76,0.08) 0%, rgba(9,18,32,0.97) 100%); }
@@ -606,6 +525,7 @@
         <option value="Gabriel"  data-calendly="https://calendly.com/gabriel-whitestarcapital/30min">Gabriel</option>
         <option value="Jackson"  data-calendly="https://calendly.com/jackson-whitestarcapital/30min">Jackson</option>
         <option value="Victoria" data-calendly="https://calendly.com/victoria-whitestarcapital/30min">Victoria</option>
+        <option value="Berenice" data-calendly="https://calendly.com/berenice-whitestarcapital/30min">Berenice</option>
       </select>
     </div>
     <div class="cfg-field">
@@ -618,58 +538,23 @@
 <!-- ── MAIN CONTENT ── -->
 <div class="main-content">
 
-  <!-- ── HARMONIC SIDEBAR ── -->
+  <!-- ── CSV SIDEBAR ── -->
   <div class="harmonic-sidebar" id="harmonic-sidebar">
     <div class="sidebar-head">
       <div class="sidebar-title">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Company Search
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Companies
       </div>
-      <div class="sidebar-sub">Powered by Harmonic · drag to populate</div>
-      <div class="sidebar-tabs">
-        <button class="stab active" id="stab-search" onclick="switchTab('search')">Search</button>
-        <button class="stab" id="stab-csv" onclick="switchTab('csv')">CSV Upload</button>
-      </div>
-
+      <div class="sidebar-sub">upload csv · drag into panels</div>
     </div>
 
-
-    <div class="search-form">
-      <div class="sf-field">
-        <div class="sf-label">Keywords / Sector</div>
-        <input id="h-keyword" type="text" placeholder="e.g. AI security, fintech" />
+    <div style="padding:12px 13px; border-bottom:1px solid var(--gold-border); flex-shrink:0;">
+      <div class="sf-label" style="margin-bottom:8px; opacity:0.6; font-size:8px; text-transform:none; letter-spacing:0; line-height:1.6;">
+        Columns: <code style="color:var(--gold)">company</code>, <code style="color:var(--gold)">website</code>,<br>
+        <code style="color:var(--gold)">founder name</code>, <code style="color:var(--gold)">founder email</code>
       </div>
-      <div class="sf-field">
-        <div class="sf-label">Stage</div>
-        <select id="h-stage">
-          <option value="">Any stage</option>
-          <option value="Pre-Seed">Pre-Seed</option>
-          <option value="Seed">Seed</option>
-          <option value="Series A">Series A</option>
-          <option value="Series B">Series B</option>
-          <option value="Series C">Series C</option>
-        </select>
-      </div>
-      <div class="sf-field">
-        <div class="sf-label">Location</div>
-        <input id="h-location" type="text" placeholder="e.g. New York, London" />
-      </div>
-      <div class="sf-field">
-        <div class="sf-label">Investor</div>
-        <input id="h-investor" type="text" placeholder="e.g. a16z, Sequoia" />
-      </div>
-      <button class="search-btn" id="harmonic-search-btn">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Search
-      </button>
-    </div>
-
-    <!-- CSV Upload Panel -->
-    <div id="csv-panel" style="display:none; padding:12px 13px; border-bottom:1px solid var(--gold-border); flex-shrink:0;">
-      <div class="sf-label" style="margin-bottom:6px;">Upload a CSV with company names &amp; websites</div>
-      <div class="sf-label" style="opacity:0.5; margin-bottom:10px; font-size:9px; text-transform:none; letter-spacing:0;">Columns: <code style="color:var(--gold)">company</code>, <code style="color:var(--gold)">website</code>, <code style="color:var(--gold)">founder name</code>, <code style="color:var(--gold)">founder email</code></div>
       <label class="csv-upload-label" id="csv-upload-label">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Choose CSV file
         <input type="file" id="csv-file-input" accept=".csv" style="display:none" />
       </label>
@@ -677,23 +562,11 @@
     </div>
 
     <div class="results-area" id="results-area">
-      <div class="results-empty" id="results-empty">
-        <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
-          <polygon points="18,2 21.5,13 33,13 24,20 27.5,32 18,25.5 8.5,32 12,20 3,13 14.5,13"
-            fill="none" stroke="#c9a84c" stroke-width="1.3" stroke-linejoin="round"/>
-        </svg>
-        <p>Search for startups, then drag a result into a panel</p>
-      </div>
-      <div class="results-loading" id="results-loading">
-        <div class="orbit"><div class="orbit-ring"></div><div class="orbit-ring"></div><div class="orbit-dot"></div></div>
-        <p>Searching Harmonic…</p>
-      </div>
-      <div class="results-error" id="results-error"></div>
       <div class="results-count" id="results-count"></div>
       <div id="results-list"></div>
     </div>
 
-  </div><!-- /harmonic-sidebar -->
+  </div><!-- /csv-sidebar -->
 
   <!-- ── 4-PANEL GRID ── -->
   <div class="panels-grid" id="panels-grid"></div>
@@ -1056,334 +929,139 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     }
   });
 
+  function updateSendBtnVisibility() {
+    const isTed = document.getElementById('sender-select').value === 'Ted';
+    document.querySelectorAll('[id^="send-"]').forEach(btn => {
+      btn.style.display = isTed ? '' : 'none';
+    });
+  }
+
   document.getElementById('sender-select').addEventListener('change', function() {
     const cal = this.options[this.selectedIndex].getAttribute('data-calendly');
     if (cal) document.getElementById('calendly-url').value = cal;
+    updateSendBtnVisibility();
   });
 
-  // ── HARMONIC SEARCH + DRAG & DROP ─────────────────────────────────────────
-  const H_KEY = 'LgSHxuFYlgkVZ43F8xY533qX608TOipB';
-  const H_HEADERS = { 'apikey': H_KEY, 'Content-Type': 'application/json' };
+  // Run once on load
+  updateSendBtnVisibility();
 
-  // Proxy URL — update this after deploying to Vercel
-  const PROXY = 'https://email-generator-flax.vercel.app/api/harmonic';
+  // ── CSV UPLOAD & DRAG-AND-DROP ────────────────────────────────────────────
+  let dragPayload = null;
 
-  async function hFetch(path, options = {}) {
-    // Build proxy URL: path becomes a query param
-    const qs = new URLSearchParams({ path });
-    // Append any extra GET params from the original path
-    const [cleanPath, extraQs] = path.split('?');
-    const proxyUrl = `${PROXY}?path=${encodeURIComponent('/' + cleanPath.replace(/^\//, ''))}${extraQs ? '&' + extraQs : ''}`;
-    return fetch(proxyUrl, options);
-  }
-
-  let dragPayload = null; // company data being dragged
-
-  // Build natural language query from filter inputs
-  function buildHQuery() {
-    const kw  = document.getElementById('h-keyword').value.trim();
-    const stg = document.getElementById('h-stage').value;
-    const loc = document.getElementById('h-location').value.trim();
-    const inv = document.getElementById('h-investor').value.trim();
-    const parts = [];
-    if (kw)  parts.push(kw);
-    if (stg) parts.push(`${stg} stage`);
-    if (loc) parts.push(`in ${loc}`);
-    if (inv) parts.push(`backed by ${inv}`);
-    return parts.length ? parts.join(' ') : 'early stage startups';
-  }
-
-  function setResultsState(state, msg = '') {
-    document.getElementById('results-empty').style.display   = state === 'empty'   ? 'flex'  : 'none';
-    document.getElementById('results-loading').classList.toggle('active', state === 'loading');
-    const errEl = document.getElementById('results-error');
-    errEl.textContent = msg;
-    errEl.classList.toggle('visible', state === 'error');
-    document.getElementById('results-count').classList.toggle('visible', state === 'results');
-    if (state !== 'results') document.getElementById('results-list').innerHTML = '';
-  }
-
-  async function harmonicSearch() {
-    const query = buildHQuery();
-    const btn = document.getElementById('harmonic-search-btn');
-    const origHTML = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner" style="border-top-color:var(--ink);border-color:rgba(6,13,24,0.2);border-top-color:var(--ink)"></span> Searching…`;
-    setResultsState('loading');
-
-    try {
-      const kw  = document.getElementById('h-keyword').value.trim();
-      const stg = document.getElementById('h-stage').value;
-      const loc = document.getElementById('h-location').value.trim();
-
-      // Build natural language query for /search/search_agent (GET)
-      const parts = [];
-      if (kw)  parts.push(kw);                               // keyword first for weight
-      if (stg && stg !== 'Any stage') parts.push(stg);
-      if (loc) parts.push('in ' + loc);
-      if (inv) parts.push('backed by ' + inv);
-      const nlQuery = encodeURIComponent(parts.length ? parts.join(' ') : 'early stage startups');
-
-      const res = await fetch(`${PROXY}?path=%2Fsearch%2Fsearch_agent&query=${nlQuery}&limit=25`);
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-
-      const urns = data?.results || [];
-      if (!urns.length) {
-        setResultsState('error', 'No results found. Try different keywords or filters.');
-        return;
-      }
-
-      // Extract company IDs from URNs like "urn:harmonic:company:12584848"
-      const ids = urns.slice(0, 10).map(r => {
-        const urn = r.urn || r;
-        return urn.split(':').pop();
-      }).filter(Boolean);
-
-      // Fetch company details in parallel
-      const details = await Promise.all(ids.map(async id => {
-        try {
-          const r2 = await fetch(`${PROXY}?path=%2Fcompanies%2F${id}`);
-          return r2.ok ? await r2.json() : null;
-        } catch { return null; }
-      }));
-
-      const companies = details.filter(Boolean);
-      if (!companies.length) {
-        setResultsState('error', 'No company details found.');
-        return;
-      }
-      renderResults(companies);
-    } catch (err) {
-      const msg = `Search failed: ${err.message} (proxy: ${PROXY})`;
-      setResultsState('error', msg);
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = origHTML;
-    }
-  }
-
-  function renderResults(companies) {
-    const list = document.getElementById('results-list');
+  function renderCards(companies) {
+    const list    = document.getElementById('results-list');
     const countEl = document.getElementById('results-count');
-    countEl.textContent = `${companies.length} companies found`;
-    setResultsState('results');
     list.innerHTML = '';
+    countEl.textContent = `${companies.length} companies`;
+    countEl.classList.add('visible');
 
     companies.forEach(co => {
-      const name    = co.name || co.company_name || 'Unknown';
-      const domain  = co.website?.domain || co.domain || '';
-      const desc    = co.description || co.short_description || '';
-      const stage   = co.stage || co.company_stage_tag_v3 || co.funding_stage || '';
-      const city    = co.location?.city || co.headquarters_location?.city || co.city || '';
-      const country = co.location?.country || co.headquarters_location?.country || '';
-      const loc     = [city, country].filter(Boolean).join(', ');
-      const id      = co.id || co.company_id || '';
-      const logoUrl = co.logo_url || '';
+      const name   = co.name   || '';
+      const domain = co.domain || '';
+      const founderName  = co.ceoName  || '';
+      const founderEmail = co.ceoEmail || '';
 
       const card = document.createElement('div');
       card.className = 'company-card';
       card.draggable = true;
-      card.dataset.companyId     = id;
-      card.dataset.companyName   = name;
-      card.dataset.companyDomain = domain;
+      card.dataset.name         = name;
+      card.dataset.domain       = domain;
+      card.dataset.founderName  = founderName;
+      card.dataset.founderEmail = founderEmail;
 
       card.innerHTML = `
         <span class="card-drag-hint">⠿ drag</span>
         <div class="card-name">${name}</div>
-        ${domain ? `<div class="card-domain">${domain}</div>` : ''}
-        <div class="card-tags">
-          ${stage ? `<span class="card-tag tag-stage">${stage}</span>` : ''}
-          ${loc   ? `<span class="card-tag tag-location">${loc}</span>` : ''}
-        </div>
-        ${desc ? `<div class="card-desc">${desc}</div>` : ''}`;
+        ${domain       ? `<div class="card-sub">${domain}</div>` : ''}
+        ${founderName  ? `<div class="card-sub" style="color:var(--text-muted);font-size:9px;margin-top:3px;">${founderName}${founderEmail ? ' · ' + founderEmail : ''}</div>` : ''}
+      `;
 
-      // Drag start
       card.addEventListener('dragstart', (e) => {
         card.classList.add('dragging');
-        dragPayload = { id, name, domain, stage, loc };
+        dragPayload = { name, domain, founderName, founderEmail };
         e.dataTransfer.effectAllowed = 'copy';
         e.dataTransfer.setData('text/plain', name);
       });
       card.addEventListener('dragend', () => card.classList.remove('dragging'));
-
       list.appendChild(card);
     });
   }
 
-  // Drag + drop onto panels
-  document.addEventListener('DOMContentLoaded', () => {});
-
-  function setupPanelDropZones() {
-    document.querySelectorAll('.panel').forEach((panel, idx) => {
-      const panelId = idx + 1;
-      panel.addEventListener('dragover', (e) => {
-        if (!dragPayload) return;
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
-        panel.classList.add('drag-over');
-      });
-      panel.addEventListener('dragleave', (e) => {
-        if (!panel.contains(e.relatedTarget)) panel.classList.remove('drag-over');
-      });
-      panel.addEventListener('drop', async (e) => {
-        e.preventDefault();
-        panel.classList.remove('drag-over');
-        if (!dragPayload) return;
-        const { id, name, domain, ceoName, ceoEmail } = dragPayload;
-        dragPayload = null;
-
-        // Fill what we have immediately
-        document.getElementById(`sn-${panelId}`).value = name;
-        const website = domain ? (domain.startsWith('http') ? domain : 'https://' + domain) : '';
-        document.getElementById(`sw-${panelId}`).value = website;
-
-        const fnEl = document.getElementById(`fn-${panelId}`);
-        const teEl = document.getElementById(`te-${panelId}`);
-
-        // If CSV pre-enriched, fill immediately and skip API calls
-        if (ceoName || ceoEmail) {
-          if (ceoName)  fnEl.value = ceoName;
-          if (ceoEmail) teEl.value = ceoEmail;
-          fnEl.placeholder = 'Jane Smith';
-          teEl.placeholder = 'jane@acme.com';
-          if (checkGenFns[panelId]) checkGenFns[panelId](panelId);
-          return;
-        }
-
-        if (checkGenFns[panelId]) checkGenFns[panelId](panelId);
-
-        // Otherwise fetch CEO + email from Harmonic
-        if (!id) return;
-        fnEl.value = ''; fnEl.placeholder = 'Looking up…';
-        teEl.value = ''; teEl.placeholder = 'Looking up…';
-
-        try {
-          // Fetch employees — try both with and without filter param
-          let empData = null;
-          const empRes1 = await fetch(`${PROXY}?path=%2Fcompanies%2F${id}%2Femployees&employee_group_type=FOUNDERS_AND_CEO&size=10`);
-          if (empRes1.ok) {
-            empData = await empRes1.json();
-          } else {
-            // Fallback: fetch without filter
-            const empRes2 = await fetch(`${PROXY}?path=%2Fcompanies%2F${id}%2Femployees&size=20`);
-            if (empRes2.ok) empData = await empRes2.json();
-          }
-
-          console.log('[Harmonic] employees raw:', JSON.stringify(empData).slice(0, 1000));
-
-          const employees = empData?.results || empData?.employees || (Array.isArray(empData) ? empData : []);
-          console.log('[Harmonic] count:', employees.length);
-          employees.slice(0,5).forEach((e,i) => {
-            const keys = Object.keys(e).join(',');
-            console.log(`  [${i}] keys=${keys} | title="${e.title||e.current_company?.title||e.position||e.role||'?'}" | name="${e.person?.full_name||e.full_name||e.name||'?'}" | person_id="${e.person?.id||e.person_id||e.id||'?'}"`);
-          });
-
-          const getT = e => (e.title || e.current_company?.title || e.position || e.role || '').toLowerCase();
-          const isCEO = e => { const t = getT(e); return t.includes('chief executive') || t === 'ceo' || t.includes('ceo,') || t.includes(' ceo') || t.startsWith('ceo'); };
-          const ceo = employees.find(isCEO);
-          console.log('[Harmonic] CEO:', ceo ? `"${getT(ceo)}" / ${ceo.person?.full_name||ceo.full_name||ceo.name}` : 'NOT FOUND');
-
-          fnEl.placeholder = 'Jane Smith';
-          if (!ceo) return;
-
-          const personObj  = ceo.person || ceo;
-          const personId   = personObj.id || personObj.person_id || ceo.person_id;
-          const personName = personObj.full_name || personObj.name || ceo.full_name || ceo.name || '';
-          if (personName) fnEl.value = personName;
-          console.log('[Harmonic] personId:', personId, '| name:', personName);
-
-          if (personId) {
-            const persRes = await fetch(`${PROXY}?path=%2Fpersons%2F${personId}`);
-            if (persRes.ok) {
-              const pData = await persRes.json();
-              console.log('[Harmonic] person data:', JSON.stringify(pData).slice(0, 500));
-              const emails = pData?.contact?.emails || pData?.emails || [];
-              const email = emails.find(e => typeof e === 'object' && e.type === 'work')?.address
-                         || (typeof emails[0] === 'string' ? emails[0] : emails[0]?.address)
-                         || pData?.email || '';
-              console.log('[Harmonic] email found:', email || 'NONE');
-              if (email) teEl.value = email;
-            }
-          }
-
-          teEl.placeholder = 'jane@acme.com';
-          if (checkGenFns[panelId]) checkGenFns[panelId](panelId);
-          const sendBtn = document.getElementById(`send-${panelId}`);
-          if (sendBtn) sendBtn.disabled = !(teEl.value.trim() && document.getElementById(`result-${panelId}`)?.classList.contains('active'));
-
-        } catch(err) {
-          console.error('[Harmonic] error:', err);
-          fnEl.placeholder = 'Jane Smith';
-          teEl.placeholder = 'jane@acme.com';
-        }
-      });
+  // Drop zones on panels
+  document.querySelectorAll('.panel').forEach((panel, idx) => {
+    const panelId = idx + 1;
+    panel.addEventListener('dragover', (e) => {
+      if (!dragPayload) return;
+      e.preventDefault();
+      panel.classList.add('drag-over');
     });
-  }
+    panel.addEventListener('dragleave', (e) => {
+      if (!panel.contains(e.relatedTarget)) panel.classList.remove('drag-over');
+    });
+    panel.addEventListener('drop', (e) => {
+      e.preventDefault();
+      panel.classList.remove('drag-over');
+      if (!dragPayload) return;
+      const { name, domain, founderName, founderEmail } = dragPayload;
+      dragPayload = null;
 
-  // Wire up search button
+      document.getElementById(`sn-${panelId}`).value = name;
+      const website = domain ? (domain.startsWith('http') ? domain : 'https://' + domain) : '';
+      document.getElementById(`sw-${panelId}`).value = website;
+      document.getElementById(`fn-${panelId}`).value = founderName;
+      document.getElementById(`te-${panelId}`).value = founderEmail;
 
-  // ── Tab switcher ────────────────────────────────────────────────────────
-  function switchTab(tab) {
-    document.getElementById('stab-search').classList.toggle('active', tab === 'search');
-    document.getElementById('stab-csv').classList.toggle('active', tab === 'csv');
-    document.querySelector('.search-form').style.display = tab === 'search' ? 'flex' : 'none';
-    document.getElementById('csv-panel').style.display   = tab === 'csv'    ? 'block' : 'none';
-  }
+      if (checkGenFns[panelId]) checkGenFns[panelId](panelId);
+    });
+  });
 
-  // ── CSV Upload ───────────────────────────────────────────────────────────
+  // CSV Upload
   document.getElementById('csv-file-input').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const label = document.getElementById('csv-upload-label');
+    const label  = document.getElementById('csv-upload-label');
     const status = document.getElementById('csv-status');
     label.style.opacity = '0.5';
-    status.textContent = 'Parsing CSV…';
+    status.textContent = 'Parsing…';
 
     const text = await file.text();
     const rows = parseCSV(text);
-
     label.style.opacity = '1';
     e.target.value = '';
 
     if (!rows.length) {
-      status.textContent = 'No rows found. Check your CSV columns.';
+      status.textContent = 'No rows found. Check column headers.';
       return;
     }
 
-    // Convert rows directly to card objects — no Harmonic lookup needed
-    const cards = rows.map(r => ({
-      name:       r.name,
-      domain:     r.domain,
-      ceoName:    r.founderName,
-      ceoEmail:   r.founderEmail,
-      stage:      '',
-      loc:        '',
-      id:         '',
-    }));
+    renderCards(rows.map(r => ({
+      name:     r.name,
+      domain:   r.domain,
+      ceoName:  r.founderName,
+      ceoEmail: r.founderEmail,
+    })));
 
-    status.textContent = `✓ ${cards.length} companies loaded`;
-    renderResults(cards);
+    status.textContent = `✓ ${rows.length} companies loaded`;
   });
 
   function parseCSV(text) {
     const lines = text.trim().split(/\r?\n/);
     if (lines.length < 2) return [];
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g,''));
-    const nameIdx    = headers.findIndex(h => h === 'company' || h === 'company name' || h === 'startup' || h === 'startup name');
+    const nameIdx    = headers.findIndex(h => h === 'company' || h === 'company name' || h === 'startup' || h === 'startup name' || h === 'name');
     const domainIdx  = headers.findIndex(h => h.includes('website') || h.includes('domain') || h.includes('url'));
-    const founderIdx = headers.findIndex(h => h.includes('founder') && h.includes('name') || h === 'founder' || h === 'ceo' || h === 'ceo name');
-    const emailIdx   = headers.findIndex(h => h.includes('email') || h.includes('founder email') || h.includes('ceo email'));
+    const founderIdx = headers.findIndex(h => (h.includes('founder') && h.includes('name')) || h === 'founder' || h === 'ceo' || h === 'ceo name');
+    const emailIdx   = headers.findIndex(h => h.includes('email'));
     if (nameIdx === -1 && domainIdx === -1) return [];
     return lines.slice(1).map(line => {
       if (!line.trim()) return null;
       const cols = splitCSVLine(line);
-      const name        = nameIdx    >= 0 ? cols[nameIdx]?.replace(/['"]/g,'').trim()    : '';
-      const domain      = domainIdx  >= 0 ? cols[domainIdx]?.replace(/['"]/g,'').trim()  : '';
-      const founderName = founderIdx >= 0 ? cols[founderIdx]?.replace(/['"]/g,'').trim() : '';
-      const founderEmail= emailIdx   >= 0 ? cols[emailIdx]?.replace(/['"]/g,'').trim()   : '';
-      return { name, domain: cleanDomain(domain), founderName, founderEmail };
+      return {
+        name:        nameIdx    >= 0 ? cols[nameIdx]?.replace(/['"]/g,'').trim()    : '',
+        domain:      cleanDomain(domainIdx >= 0 ? cols[domainIdx]?.replace(/['"]/g,'').trim() : ''),
+        founderName: founderIdx >= 0 ? cols[founderIdx]?.replace(/['"]/g,'').trim() : '',
+        founderEmail:emailIdx   >= 0 ? cols[emailIdx]?.replace(/['"]/g,'').trim()   : '',
+      };
     }).filter(Boolean).filter(r => r.name || r.domain);
   }
 
@@ -1402,14 +1080,6 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     if (!raw) return '';
     return raw.replace(/^https?:\/\//,'').replace(/^www\./,'').split('/')[0].trim();
   }
-
-
-
-  document.getElementById('harmonic-search-btn').addEventListener('click', harmonicSearch);
-  document.getElementById('h-keyword').addEventListener('keydown', e => { if (e.key === 'Enter') harmonicSearch(); });
-
-  // Set up drop zones after panels are built (panels are built synchronously above)
-  setupPanelDropZones();
 </script>
 </body>
 </html>
