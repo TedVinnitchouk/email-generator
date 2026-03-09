@@ -4,26 +4,37 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WSC Outreach · White Star Capital</title>
+
+  <!-- Google Fonts: Playfair Display (headers/subject), Cormorant Garamond (body text), Montserrat (UI labels) -->
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- marked.js: converts Markdown (from the AI) into HTML for display -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+
+  <!-- EmailJS: sends emails directly from the browser without a backend server -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
   <style>
+    /* Reset all default browser margin/padding/box-sizing */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ── DESIGN TOKENS ─────────────────────────────────────────────────────
+       Central colour palette. All colours are referenced by these variables
+       throughout the CSS so changing one value updates the whole UI. */
     :root {
-      --gold:        #c9a84c;
-      --gold-light:  #e2c06a;
-      --gold-dim:    #8a6b2a;
-      --gold-glow:   rgba(201,168,76,0.12);
-      --gold-border: rgba(201,168,76,0.2);
-      --ink:         #060d18;
-      --ink2:        #0a1525;
-      --ink3:        #0f1e34;
-      --ink4:        #152540;
-      --text:        #ede5d4;
-      --text-dim:    #8fa3bc;
-      --text-muted:  #4d6480;
-      --star-white:  #f5f0e8;
+      --gold:        #c9a84c;               /* Primary gold accent */
+      --gold-light:  #e2c06a;               /* Lighter gold for hover states */
+      --gold-dim:    #8a6b2a;               /* Darker gold for gradients */
+      --gold-glow:   rgba(201,168,76,0.12); /* Subtle gold background fill */
+      --gold-border: rgba(201,168,76,0.2);  /* Low-opacity gold for borders */
+      --ink:         #060d18;               /* Darkest background */
+      --ink2:        #0a1525;               /* Panel background */
+      --ink3:        #0f1e34;               /* Input panel background */
+      --ink4:        #152540;               /* Slightly lighter panel */
+      --text:        #ede5d4;               /* Main body text (warm off-white) */
+      --text-dim:    #8fa3bc;               /* Secondary text */
+      --text-muted:  #4d6480;               /* Labels and placeholders */
+      --star-white:  #f5f0e8;               /* Brightest text (headings) */
     }
 
     html, body { height: 100%; }
@@ -31,11 +42,14 @@
       background: var(--ink);
       color: var(--text);
       font-family: 'Montserrat', sans-serif;
-      overflow: hidden;
+      overflow: hidden; /* Prevents page-level scrolling; panels scroll independently */
       position: relative;
     }
 
-    /* Starfield */
+    /* ── STARFIELD BACKGROUND ───────────────────────────────────────────────
+       Two pseudo-elements create a decorative space aesthetic:
+       ::before — gradient overlay for depth/vignette
+       ::after  — tiny radial-gradient dots that look like stars */
     body::before {
       content: '';
       position: fixed; inset: 0; pointer-events: none; z-index: 0;
@@ -61,7 +75,9 @@
         radial-gradient(1px 1px at 35% 3%,  rgba(245,240,232,0.4) 0%, transparent 100%);
     }
 
-    /* ── TOP BAR ── */
+    /* ── TOP BAR ────────────────────────────────────────────────────────────
+       Fixed header containing the WSC logo, API key input, sender dropdown,
+       and Calendly URL. Sits above everything with z-index:10. */
     .top-bar {
       position: relative; z-index: 10;
       display: flex; align-items: stretch; gap: 0;
@@ -70,12 +86,14 @@
       border-bottom: 1px solid var(--gold-border);
       box-shadow: 0 4px 40px rgba(0,0,0,0.6);
     }
+    /* Decorative gold line running across the very top edge of the bar */
     .top-bar::before {
       content: '';
       position: absolute; top: 0; left: 0; right: 0; height: 1px;
       background: linear-gradient(90deg, transparent 0%, var(--gold-dim) 15%, var(--gold) 40%, var(--gold-light) 50%, var(--gold) 60%, var(--gold-dim) 85%, transparent 100%);
     }
 
+    /* Left section of top bar: WSC star logo + brand name */
     .brand-block {
       display: flex; align-items: center; gap: 13px;
       padding: 0 24px 0 22px;
@@ -98,8 +116,10 @@
       text-transform: uppercase; margin-top: 5px; opacity: 0.8;
     }
 
+    /* Right section of top bar: config fields (API key, sender, Calendly) */
     .top-config { display: flex; align-items: stretch; flex: 1; }
 
+    /* Each individual config field (label + input) */
     .cfg-field {
       display: flex; flex-direction: column; justify-content: center;
       gap: 3px; padding: 0 18px;
@@ -119,6 +139,7 @@
     }
     .cfg-field input:focus, .cfg-field select:focus { border-bottom-color: var(--gold); }
     .cfg-field input::placeholder { color: var(--text-muted); font-size: 11px; }
+    /* Custom dropdown arrow using a gold SVG chevron */
     .cfg-field select {
       appearance: none; cursor: pointer; width: 115px;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%23c9a84c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
@@ -127,8 +148,10 @@
     }
     .cfg-field select option { background: var(--ink3); }
 
+    /* API key field — wraps the input and the show/hide eye button together */
     .key-wrap { position: relative; display: flex; align-items: center; }
     .key-wrap input { width: 200px; padding-right: 22px; }
+    /* Eye icon button to toggle password visibility */
     #toggle-key {
       position: absolute; right: 0; background: none; border: none;
       cursor: pointer; color: var(--text-muted); padding: 0;
@@ -138,31 +161,37 @@
     .api-note { font-size: 7.5px; color: var(--text-muted); letter-spacing: 0.04em; }
     #calendly-url { width: 220px; }
 
-    /* ── GRID ── */
+    /* ── 2×2 PANEL GRID ─────────────────────────────────────────────────────
+       The four email panels are arranged in a 2-column, 2-row CSS grid.
+       A 1px gap between cells shows the gold background as a divider line. */
     .panels-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr;
       gap: 1px;
-      background: rgba(201,168,76,0.1);
+      background: rgba(201,168,76,0.1); /* Gold tint shows through the gaps */
     }
 
-    /* ── PANEL ── */
+    /* ── INDIVIDUAL PANEL ───────────────────────────────────────────────────
+       Each panel is split into two halves side-by-side:
+       - Left: .panel-inputs  (form fields + generate/revise controls)
+       - Right: .panel-output (empty state / loading / generated email) */
     .panel { background: var(--ink2); display: flex; flex-direction: column; overflow: hidden; }
     .panel-inner { display: flex; flex: 1; overflow: hidden; }
 
-    /* ── INPUT SIDE ── */
+    /* ── INPUT COLUMN (left half of each panel) ─────────────────────────── */
     .panel-inputs {
       width: 206px; flex-shrink: 0;
       background: linear-gradient(160deg, var(--ink3) 0%, rgba(9,18,32,0.97) 100%);
       border-right: 1px solid var(--gold-border);
       padding: 13px 12px 11px;
       display: flex; flex-direction: column; gap: 8px;
-      overflow-y: auto;
+      overflow-y: auto; /* Allows scrolling if content overflows */
     }
     .panel-inputs::-webkit-scrollbar { width: 2px; }
     .panel-inputs::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); }
 
+    /* Panel title row: star icon + "Outreach I / II / III / IV" */
     .panel-header {
       display: flex; align-items: center; gap: 6px;
       padding-bottom: 9px; margin-bottom: 1px;
@@ -174,6 +203,7 @@
       color: var(--gold); text-transform: uppercase;
     }
 
+    /* Individual form field: label above a text input */
     .p-field { display: flex; flex-direction: column; gap: 3px; }
     .p-field label {
       font-size: 7px; font-weight: 700; letter-spacing: 0.2em;
@@ -189,6 +219,10 @@
     .p-field input::placeholder { color: var(--text-muted); font-size: 10px; }
     .p-field input:focus { border-bottom-color: var(--gold); background: rgba(201,168,76,0.035); }
 
+    /* ── GENERATE BUTTON ────────────────────────────────────────────────────
+       Gold gradient button. Disabled until all required fields are filled
+       and an API key is present. The ::after pseudo-element creates a
+       shimmer/sheen effect that sweeps across on hover. */
     .gen-btn {
       width: 100%; padding: 9px; margin-top: 1px;
       background: linear-gradient(135deg, var(--gold) 0%, #a07820 50%, var(--gold-dim) 100%);
@@ -200,17 +234,25 @@
       box-shadow: 0 2px 18px rgba(201,168,76,0.28);
       position: relative; overflow: hidden;
     }
+    /* Shimmer highlight element */
     .gen-btn::after {
       content: ''; position: absolute;
       top: 0; left: -100%; width: 60%; height: 100%;
       background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
       transition: left 0.4s ease;
     }
-    .gen-btn:hover:not(:disabled)::after { left: 150%; }
+    .gen-btn:hover:not(:disabled)::after { left: 150%; } /* Sweep the shimmer across */
     .gen-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(201,168,76,0.45); }
     .gen-btn:active:not(:disabled) { transform: translateY(0); }
     .gen-btn:disabled { opacity: 0.28; cursor: not-allowed; }
+
+    /* Thin gold divider between Generate button and the quick-action buttons */
     .panel-rule { height: 1px; background: var(--gold-border); margin: 6px 0 8px; flex-shrink: 0; }
+
+    /* ── QUICK-ACTION BUTTONS ───────────────────────────────────────────────
+       Hidden until an email is generated. Appear below the Generate button.
+       Each button (Make longer / shorter / More natural / Verify) sets a
+       preset feedback prompt and immediately triggers a revision. */
     .quick-btns { display: none; flex-direction: column; gap: 3px; }
     .quick-btns.visible { display: flex; }
     .q-btn {
@@ -224,6 +266,11 @@
     .q-btn:hover { background: rgba(201,168,76,0.1); border-color: rgba(201,168,76,0.35); color: var(--gold-light); }
     .q-btn svg { flex-shrink: 0; opacity: 0.55; }
     .q-btn:hover svg { opacity: 1; }
+
+    /* ── FEEDBACK / REVISE AREA ─────────────────────────────────────────────
+       Textarea for custom revision instructions + Revise button.
+       Shown after email generation. Quick-action buttons auto-fill the
+       textarea and trigger a revision without needing to click Revise manually. */
     .feedback-area { display: none; flex-direction: column; gap: 4px; }
     .feedback-area.visible { display: flex; }
     .feedback-area textarea {
@@ -245,11 +292,10 @@
     .rev-btn:hover:not(:disabled) { background: var(--gold-glow); border-color: rgba(201,168,76,0.45); }
     .rev-btn:disabled { opacity: 0.28; cursor: not-allowed; }
 
-
-
-    /* ── OUTPUT SIDE ── */
+    /* ── OUTPUT COLUMN (right half of each panel) ───────────────────────── */
     .panel-output { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
+    /* Empty state: shown before any email is generated */
     .p-empty {
       flex: 1; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 12px;
@@ -261,8 +307,10 @@
       text-align: center; max-width: 150px; line-height: 1.7; opacity: 0.7;
     }
 
+    /* Loading state: animated orbit spinner shown while the API call is in-flight */
     .p-loading { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
     .p-loading.active { display: flex; }
+    /* Three concentric spinning rings + central glowing dot */
     .orbit { width: 42px; height: 42px; position: relative; }
     .orbit-ring {
       position: absolute; inset: 0; border-radius: 50%;
@@ -289,6 +337,7 @@
       max-width: 140px; line-height: 1.65;
     }
 
+    /* Error state: shown when the API call fails */
     .p-error {
       display: none; margin: 14px; padding: 11px 13px;
       background: rgba(220,70,70,0.07);
@@ -297,9 +346,11 @@
       color: #e89090; line-height: 1.5;
     }
 
+    /* Result state: the generated email subject + body, shown after generation */
     .p-result { display: none; flex-direction: column; flex: 1; overflow: hidden; }
     .p-result.active { display: flex; animation: fade-rise 0.3s ease forwards; }
 
+    /* Subject line row at the top of the result */
     .p-subject-row {
       display: flex; align-items: baseline; gap: 10px;
       padding: 10px 15px 9px;
@@ -310,6 +361,7 @@
       font-size: 7px; font-weight: 800; letter-spacing: 0.28em;
       color: var(--gold); flex-shrink: 0; opacity: 0.85; text-transform: uppercase;
     }
+    /* Editable subject text — user can click to edit directly in the browser */
     .p-subject-text {
       font-family: 'Playfair Display', serif; font-style: italic;
       font-size: 13px; color: var(--star-white); line-height: 1.4; flex: 1;
@@ -319,12 +371,14 @@
     .p-subject-text:hover { background: rgba(201,168,76,0.07); }
     .p-subject-text:focus { background: rgba(201,168,76,0.11); box-shadow: 0 0 0 2px rgba(201,168,76,0.18); }
 
+    /* Small hint below subject telling the user they can click to edit */
     .edit-hint {
       font-size: 7.5px; color: var(--text-muted); letter-spacing: 0.08em;
       padding: 4px 15px; display: none; opacity: 0.5;
     }
     .edit-hint.visible { display: block; }
 
+    /* Email body — rendered as HTML from Markdown, also contenteditable */
     .p-body {
       flex: 1; overflow-y: auto; padding: 14px 17px 10px;
       font-family: 'Cormorant Garamond', serif; font-size: 14px; line-height: 1.9;
@@ -333,11 +387,13 @@
     .p-body:focus { background: rgba(255,255,255,0.008); }
     .p-body p { margin: 0 0 0.9em 0; }
     .p-body p:last-child { margin-bottom: 0; }
+    /* Hyperlinks styled gold with an underline */
     .p-body a { color: var(--gold-light); text-decoration: none; border-bottom: 1px solid rgba(201,168,76,0.35); transition: all 0.15s; }
     .p-body a:hover { color: #f0d882; border-bottom-color: var(--gold-light); }
     .p-body::-webkit-scrollbar { width: 2px; }
     .p-body::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.18); border-radius: 2px; }
 
+    /* Action bar at the bottom of the result: Copy · Send · New */
     .p-actions {
       display: flex; gap: 6px; padding: 8px 13px 10px; flex-shrink: 0;
       border-top: 1px solid var(--gold-border);
@@ -345,6 +401,7 @@
       align-items: center;
     }
 
+    /* Shared button styles for Copy, Send, New */
     .p-copy-btn, .p-reset-btn, .p-send-btn {
       display: flex; align-items: center; gap: 5px;
       padding: 5px 11px; border-radius: 2px;
@@ -352,12 +409,14 @@
       letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
       transition: all 0.16s;
     }
+    /* Copy button — outline gold style */
     .p-copy-btn {
       background: transparent;
       border: 1px solid var(--gold-border); color: var(--gold);
     }
     .p-copy-btn:hover { background: var(--gold-glow); border-color: rgba(201,168,76,0.45); }
 
+    /* Send button — solid gold, only visible when sender is Ted */
     .p-send-btn {
       background: linear-gradient(135deg, var(--gold) 0%, #9a7218 100%);
       border: none; color: var(--ink);
@@ -366,34 +425,42 @@
     .p-send-btn:hover:not(:disabled) { box-shadow: 0 4px 22px rgba(201,168,76,0.5); transform: translateY(-1px); }
     .p-send-btn:disabled { opacity: 0.28; cursor: not-allowed; box-shadow: none; transform: none; }
 
+    /* New/Reset button — muted, pushed to the right with margin-left: auto */
     .p-reset-btn {
       background: transparent; margin-left: auto;
       border: 1px solid rgba(77,100,128,0.25); color: var(--text-muted);
     }
     .p-reset-btn:hover { background: rgba(77,100,128,0.07); color: var(--text-dim); border-color: rgba(77,100,128,0.45); }
 
+    /* Spinning loading indicator used inside buttons while async work is happening */
     .spinner {
       width: 10px; height: 10px;
       border: 2px solid rgba(6,13,24,0.25);
       border-top-color: currentColor;
       border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0;
     }
+    /* Override spinner colours specifically inside the dark Generate button */
     .gen-btn .spinner { border-top-color: var(--ink); border-color: rgba(6,13,24,0.2); border-top-color: var(--ink); }
 
     @keyframes spin { to { transform: rotate(360deg); } }
+    /* Fade + slight upward movement when the result panel appears */
     @keyframes fade-rise {
       from { opacity: 0; transform: translateY(5px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ── MAIN CONTENT WRAPPER ── */
+    /* ── MAIN CONTENT WRAPPER ───────────────────────────────────────────────
+       Sits below the top bar and fills the remaining viewport height.
+       Contains the CSV sidebar on the left and the 2×2 panel grid on the right. */
     .main-content {
       display: flex; flex-direction: row;
-      height: calc(100vh - 66px);
+      height: calc(100vh - 66px); /* Full height minus top bar */
       position: relative; z-index: 1;
     }
 
-    /* ── CSV SIDEBAR ── */
+    /* ── CSV SIDEBAR ────────────────────────────────────────────────────────
+       220px wide panel on the far left. User uploads a CSV here; parsed
+       company cards appear as draggable items that can be dropped into panels. */
     .harmonic-sidebar {
       width: 220px; flex-shrink: 0;
       background: linear-gradient(180deg, rgba(9,17,32,0.99) 0%, rgba(6,12,24,0.99) 100%);
@@ -401,6 +468,7 @@
       display: flex; flex-direction: column;
       overflow: hidden;
     }
+    /* Sidebar header section */
     .sidebar-head {
       padding: 13px 14px 11px;
       border-bottom: 1px solid var(--gold-border);
@@ -413,6 +481,8 @@
     }
     .sidebar-sub { font-size: 9px; color: var(--text-muted); font-style: italic; font-family: 'Cormorant Garamond', serif; }
     .sf-label { font-size: 7px; font-weight: 700; letter-spacing: 0.2em; color: var(--text-muted); text-transform: uppercase; }
+
+    /* Dashed upload area that opens the file picker */
     .csv-upload-label {
       display:flex; align-items:center; gap:7px; padding:9px 12px;
       border:1px dashed rgba(201,168,76,0.4); border-radius:4px; cursor:pointer;
@@ -421,15 +491,19 @@
     }
     .csv-upload-label:hover { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.07); }
 
-    /* Company card */
+    /* Scrollable area that holds the draggable company cards */
     .results-area { flex: 1; overflow-y: auto; padding: 8px 0; }
     .results-area::-webkit-scrollbar { width: 2px; }
     .results-area::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); }
+
+    /* "X companies" count shown above the card list */
     .results-count {
       font-size: 7.5px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
       color: var(--text-muted); padding: 4px 13px 6px; display: none;
     }
     .results-count.visible { display: block; }
+
+    /* Individual draggable company card in the sidebar */
     .company-card {
       margin: 0 8px 5px; padding: 9px 10px;
       background: rgba(255,255,255,0.025);
@@ -440,16 +514,24 @@
     }
     .company-card:hover { background: rgba(201,168,76,0.07); border-color: rgba(201,168,76,0.3); }
     .company-card:active { cursor: grabbing; transform: scale(0.98); }
-    .company-card.dragging { opacity: 0.5; transform: scale(0.97); }
+    .company-card.dragging { opacity: 0.5; transform: scale(0.97); } /* While being dragged */
+
+    /* "⠿ drag" hint that appears on card hover */
     .card-drag-hint {
       position: absolute; top: 6px; right: 7px;
       font-size: 8px; color: var(--text-muted); opacity: 0; transition: opacity 0.15s;
     }
     .company-card:hover .card-drag-hint { opacity: 0.6; }
+
+    /* Card content: company name and secondary info lines */
     .card-name { font-size: 11.5px; font-weight: 600; color: var(--star-white); margin-bottom: 2px; line-height: 1.2; padding-right: 20px; }
     .card-sub  { font-size: 9px; color: var(--text-muted); font-family: 'Cormorant Garamond', serif; }
 
-    /* Drop zone highlight on panels */
+    /* ── DRAG-OVER DROP ZONE HIGHLIGHT ──────────────────────────────────────
+       When a card is dragged over a panel, the panel gets a gold border
+       glow and a full-panel overlay with a "↓ Drop to populate" label.
+       The overlay is created with ::after and pointer-events:none so it
+       doesn't block the drop event. */
     .panel.drag-over .panel-inputs { background: linear-gradient(160deg, rgba(201,168,76,0.08) 0%, rgba(9,18,32,0.97) 100%); }
     .panel.drag-over { box-shadow: inset 0 0 0 2px rgba(201,168,76,0.4); }
     .panel.drag-over::after {
@@ -462,19 +544,18 @@
       pointer-events: none;
     }
 
-    /* panel needs position:relative for the drop overlay */
+    /* Panels need position:relative so the ::after drop overlay can be positioned absolute inside them */
     .panel { position: relative; }
 
-    /* Update grid to fill remaining width */
-    .panels-grid {
-      flex: 1; height: 100%;
-    }
+    /* The panel grid fills the remaining width after the sidebar */
+    .panels-grid { flex: 1; height: 100%; }
   </style>
 </head>
 <body>
 
-<!-- ── TOP BAR ── -->
+<!-- ── TOP BAR ──────────────────────────────────────────────────────────── -->
 <div class="top-bar">
+  <!-- Brand: WSC star logo + name -->
   <div class="brand-block">
     <div class="star-logo">
       <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -492,11 +573,14 @@
     </div>
   </div>
 
+  <!-- Config fields: API key, sender, Calendly URL -->
   <div class="top-config">
+    <!-- Anthropic API key — stored only in memory, never sent anywhere except the Anthropic API -->
     <div class="cfg-field">
       <div class="cfg-label">Anthropic API Key</div>
       <div class="key-wrap">
         <input id="api-key" type="password" placeholder="sk-ant-api03-..." />
+        <!-- Eye button to toggle key visibility -->
         <button id="toggle-key" title="Show/hide key">
           <svg id="eye-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
@@ -505,6 +589,9 @@
       </div>
       <div class="api-note">Sent directly to Anthropic · Never stored</div>
     </div>
+
+    <!-- Sender dropdown — changing this updates the Calendly URL automatically
+         and hides the Send button for non-Ted senders -->
     <div class="cfg-field">
       <div class="cfg-label">Sender</div>
       <select id="sender-select">
@@ -519,17 +606,28 @@
         <option value="Berenice" data-calendly="https://calendly.com/berenice-whitestarcapital/30min">Berenice</option>
       </select>
     </div>
+
+    <!-- Calendly link auto-populated from sender selection, but can be overridden manually -->
     <div class="cfg-field">
       <div class="cfg-label">Calendly Link</div>
       <input id="calendly-url" type="text" value="https://calendly.com/ted-whitestarcapital/30min" />
     </div>
+
+    <!-- Make.com webhook URL for Slack notifications on email send -->
+    <div class="cfg-field">
+      <div class="cfg-label">Slack Webhook <span style="color:var(--text-muted);font-weight:400;letter-spacing:0;">(Make.com)</span></div>
+      <input id="slack-webhook" type="text" value="https://hook.us2.make.com/fgkzqvipcvw8qhlnjvi5c2fwp9usc06g" style="width:230px;" />
+    </div>
   </div>
 </div>
 
-<!-- ── MAIN CONTENT ── -->
+<!-- ── MAIN CONTENT ─────────────────────────────────────────────────────── -->
 <div class="main-content">
 
-  <!-- ── CSV SIDEBAR ── -->
+  <!-- ── CSV SIDEBAR ──────────────────────────────────────────────────────
+       User uploads a CSV with columns: company, website, founder name, founder email.
+       Each row becomes a draggable card. Dragging a card onto a panel
+       auto-fills all the input fields and removes the card from the sidebar. -->
   <div class="harmonic-sidebar" id="harmonic-sidebar">
     <div class="sidebar-head">
       <div class="sidebar-title">
@@ -539,19 +637,23 @@
       <div class="sidebar-sub">upload csv · drag into panels</div>
     </div>
 
+    <!-- CSV format hint + file picker -->
     <div style="padding:12px 13px; border-bottom:1px solid var(--gold-border); flex-shrink:0;">
       <div class="sf-label" style="margin-bottom:8px; opacity:0.6; font-size:8px; text-transform:none; letter-spacing:0; line-height:1.6;">
         Columns: <code style="color:var(--gold)">company</code>, <code style="color:var(--gold)">website</code>,<br>
         <code style="color:var(--gold)">founder name</code>, <code style="color:var(--gold)">founder email</code>
       </div>
+      <!-- Label wraps a hidden file input — clicking the label opens the file dialog -->
       <label class="csv-upload-label" id="csv-upload-label">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Choose CSV file
         <input type="file" id="csv-file-input" accept=".csv" style="display:none" />
       </label>
+      <!-- Status message: "Parsing…" or "✓ N companies loaded" or error -->
       <div id="csv-status" style="font-size:10px; color:var(--gold); margin-top:8px; font-family:var(--font-ui); min-height:14px;"></div>
     </div>
 
+    <!-- Scrollable card list — populated by renderCards() after CSV upload -->
     <div class="results-area" id="results-area">
       <div class="results-count" id="results-count"></div>
       <div id="results-list"></div>
@@ -559,12 +661,17 @@
 
   </div><!-- /csv-sidebar -->
 
-  <!-- ── 4-PANEL GRID ── -->
+  <!-- ── 4-PANEL EMAIL GRID ────────────────────────────────────────────────
+       Panels are created dynamically by JavaScript below in a for loop (i = 1..4).
+       Each panel gets unique IDs like fn-1, sn-1, body-1 etc. -->
   <div class="panels-grid" id="panels-grid"></div>
 
 </div>
 
 <script>
+  // ── MARKDOWN RENDERER ─────────────────────────────────────────────────────
+  // Custom marked.js renderer to ensure all links open in a new tab.
+  // This handles the object-form href that newer marked versions pass.
   const renderer = new marked.Renderer();
   renderer.link = function(href, title, text) {
     const url   = (href && typeof href === 'object') ? href.href  : href;
@@ -573,16 +680,24 @@
   };
   marked.use({ renderer, breaks: true, gfm: true });
 
+  // ── AI SYSTEM PROMPT ──────────────────────────────────────────────────────
+  // Sent with every API call to set the AI's persona and goal.
   const SYSTEM = `You are an investor at White Star Capital, a $1.5bn VC fund focused on leading Series A rounds based in NYC. You are reaching out to Seed and Series A founders with the goal of getting them on a call. Be polite, professional, and upbeat.`;
 
+  // ── GLOBAL CONFIG HELPERS ─────────────────────────────────────────────────
+  // Read the current values from the top-bar config fields.
   function getSender()   { return document.getElementById('sender-select').value.trim() || 'Ted'; }
   function getCalendly() { return document.getElementById('calendly-url').value.trim() || 'https://calendly.com/ted-whitestarcapital/30min'; }
   function getApiKey()   { return document.getElementById('api-key').value.trim(); }
 
+  // ── EMAIL PROMPT BUILDER ──────────────────────────────────────────────────
+  // Constructs the full user prompt sent to Claude for initial email generation.
+  // The AI is instructed to visit the startup's website using web search before writing,
+  // ensuring the personalisation is accurate. Strict formatting rules are enforced in the prompt.
   function buildPrompt(founderName, startupName, startupWebsite) {
     const sender   = getSender();
     const calendly = getCalendly();
-    const firstName = founderName.split(' ')[0];
+    const firstName = founderName.split(' ')[0]; // First name only for the greeting
     return `You are a VC investor at White Star Capital, a $1.5bn fund in NYC leading Series A/B.
 
 Step 1 (required): Visit ${startupWebsite} and confirm what the company does from that site only. Do not confuse it with similarly named companies. If the site is unclear, omit uncertain details and keep personalization high-level but still industry-relevant.
@@ -627,8 +742,12 @@ STARTUP_NAME: ${startupName}
 STARTUP_WEBSITE: ${startupWebsite}`;
   }
 
+  // ── OUTPUT PARSER ─────────────────────────────────────────────────────────
+  // Extracts the subject line and body from the raw AI response text.
+  // The AI is instructed to end its output with "SUBJECT: ..." on its own line.
   function parseOutput(raw) {
-    let cleaned = raw.replace(/\*\*/g, '');
+    let cleaned = raw.replace(/\*\*/g, ''); // Strip any bold markdown the AI adds
+    // Find where "Hi [Name]," starts to skip any preamble the AI might prepend
     const hiIndex = cleaned.search(/^Hi /im);
     if (hiIndex > 0) cleaned = cleaned.slice(hiIndex);
     const match = cleaned.match(/^SUBJECT:\s*(.+)$/im);
@@ -637,26 +756,35 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     return { subject, body };
   }
 
+  // ── BODY RENDERER ─────────────────────────────────────────────────────────
+  // Converts the raw Markdown email body into HTML for display.
+  // Special handling for the closing "Best,\n[Name]" — splits them into
+  // separate paragraphs so they appear on their own lines.
   function renderBody(body) {
     const paras = body.replace(/\r\n/g, '\n').split(/\n{2,}/);
     const processed = paras.map((p, i) => {
       const t = p.trim();
-      if (i === 0) return t;
-      // Ensure "Best,\nName" renders as two separate lines
+      if (i === 0) return t; // First paragraph: always keep as-is
+      // Split "Best,\nName" into two paragraphs so they render on separate lines
       if (/^Best,/i.test(t)) {
         return t.replace(/^(Best,)\s*\n\s*(.+)$/i, '$1\n\n$2');
       }
-      return t.replace(/\n/g, ' ');
+      return t.replace(/\n/g, ' '); // Collapse single newlines within other paragraphs
     });
     return marked.parse(processed.join('\n\n'));
   }
 
+  // ── ANTHROPIC API CALL ────────────────────────────────────────────────────
+  // Sends messages to the Claude API directly from the browser.
+  // useWebSearch=true uses Sonnet (with web search tool enabled) for generation.
+  // useWebSearch=false uses Haiku (cheaper/faster) for revisions.
   async function callAPI(messages, useWebSearch = false) {
     const apiKey = getApiKey();
     const body = {
       model: useWebSearch ? 'claude-sonnet-4-20250514' : 'claude-haiku-4-5-20251001',
       max_tokens: 800, system: SYSTEM, messages
     };
+    // Attach the web_search tool when doing initial generation
     if (useWebSearch) body.tools = [{ type: 'web_search_20250305', name: 'web_search' }];
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -664,16 +792,21 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
+        'anthropic-dangerous-direct-browser-access': 'true' // Required for browser-direct API calls
       },
       body: JSON.stringify(body)
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error.message || 'API error');
+    // Concatenate all text blocks from the response (web search may produce multiple)
     return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
   }
 
-  const ROMAN = ['I','II','III','IV'];
+  // ── PANEL SETUP ───────────────────────────────────────────────────────────
+  const ROMAN = ['I','II','III','IV']; // Roman numeral labels for the four panels
+
+  // Preset quick-action buttons. Each has a label, an SVG icon, and a feedback
+  // string that gets injected into the revision prompt when clicked.
   const QUICK_BTNS = [
     { label: 'Make longer',    icon: `<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>`, feedback: `Make the middle paragraph approximately 33% longer and more detailed. Keep the first sentence exactly as 'Really love what you are building at [company].' Add more specific detail or context to the second sentence. Still ONE continuous paragraph, no line breaks between sentences. No product summary. No m-dashes.` },
     { label: 'Make shorter',   icon: `<line x1="5" y1="12" x2="19" y2="12"/>`, feedback: `Make the middle paragraph shorter and more concise.` },
@@ -682,21 +815,32 @@ STARTUP_WEBSITE: ${startupWebsite}`;
   ];
 
   const grid = document.getElementById('panels-grid');
+
+  // panelStates stores per-panel data that needs to persist between renders.
+  // lastRawBody: the original Markdown string from the API (used for revisions
+  // so hyperlinks aren't lost when re-reading the rendered HTML).
   const panelStates = {};
 
+  // checkGenFns stores a reference to each panel's checkGen() function so the
+  // drag-and-drop handler can call it after filling in the inputs.
   const checkGenFns = {};
 
+  // ── BUILD ALL 4 PANELS ────────────────────────────────────────────────────
   for (let i = 1; i <= 4; i++) {
+
+    // Build the HTML string for this panel's quick-action buttons
     const quickBtnsHTML = QUICK_BTNS.map(b => `
       <button class="q-btn" data-feedback="${b.feedback.replace(/"/g,'&quot;')}">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${b.icon}</svg>
         ${b.label}
       </button>`).join('');
 
+    // Create the panel DOM element and inject all its inner HTML
     const panel = document.createElement('div');
     panel.className = 'panel';
     panel.innerHTML = `
       <div class="panel-inner">
+        <!-- INPUT COLUMN -->
         <div class="panel-inputs" id="inputs-${i}">
           <div class="panel-header">
             <span class="panel-star">★</span>
@@ -706,12 +850,15 @@ STARTUP_WEBSITE: ${startupWebsite}`;
           <div class="p-field"><label>Startup Name</label><input id="sn-${i}" type="text" placeholder="Acme Inc." /></div>
           <div class="p-field"><label>Website</label><input id="sw-${i}" type="text" placeholder="acme.com" /></div>
           <div class="p-field"><label>Founder Email</label><input id="te-${i}" type="email" placeholder="jane@acme.com" /></div>
+          <!-- Generate button — disabled until all required fields + API key are filled -->
           <button class="gen-btn" id="gen-${i}" disabled>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
             Generate
           </button>
+          <!-- Divider + quick-action buttons (hidden until email generated) -->
           <div class="panel-rule"></div>
           <div class="quick-btns" id="qbtns-${i}">${quickBtnsHTML}</div>
+          <!-- Custom revision textarea + Revise button (hidden until email generated) -->
           <div class="feedback-area" id="fba-${i}">
             <textarea id="fb-${i}" placeholder="Custom revision notes…"></textarea>
             <button class="rev-btn" id="rev-${i}">
@@ -721,7 +868,9 @@ STARTUP_WEBSITE: ${startupWebsite}`;
           </div>
 
         </div>
+        <!-- OUTPUT COLUMN -->
         <div class="panel-output" id="output-${i}">
+          <!-- Empty state: shown before generation -->
           <div class="p-empty" id="empty-${i}">
             <div class="p-empty-icon">
               <svg width="42" height="42" viewBox="0 0 36 36" fill="none">
@@ -731,6 +880,7 @@ STARTUP_WEBSITE: ${startupWebsite}`;
             </div>
             <p>Enter details &amp; generate</p>
           </div>
+          <!-- Loading state: shown while API call is in-flight -->
           <div class="p-loading" id="loading-${i}">
             <div class="orbit">
               <div class="orbit-ring"></div>
@@ -739,14 +889,19 @@ STARTUP_WEBSITE: ${startupWebsite}`;
             </div>
             <p id="loading-txt-${i}">Researching startup…</p>
           </div>
+          <!-- Error state: shown if the API call fails -->
           <div class="p-error" id="error-${i}"></div>
+          <!-- Result state: the generated email -->
           <div class="p-result" id="result-${i}">
+            <!-- Editable subject line -->
             <div class="p-subject-row">
               <span class="p-subject-tag">Subject</span>
               <span class="p-subject-text" id="subj-${i}" contenteditable="true" spellcheck="false"></span>
             </div>
             <div class="edit-hint" id="edit-hint-${i}">✎ Click to edit subject or body</div>
+            <!-- Editable email body (rendered from Markdown) -->
             <div class="p-body" id="body-${i}" contenteditable="true" spellcheck="false"></div>
+            <!-- Action buttons: Copy, Send (Ted only), New -->
             <div class="p-actions">
               <button class="p-copy-btn" id="copy-${i}">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -762,27 +917,43 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         </div>
       </div>`;
     grid.appendChild(panel);
+
+    // Initialise this panel's state store
     panelStates[i] = { lastRawBody: '' };
 
+    // ── PANEL STATE SWITCHER ──────────────────────────────────────────────
+    // Toggles visibility between the four output states: empty / loading / error / result
     function showState(id, state) {
       document.getElementById(`empty-${id}`).style.display   = state === 'empty'   ? 'flex' : 'none';
       document.getElementById(`loading-${id}`).classList.toggle('active', state === 'loading');
       document.getElementById(`error-${id}`).style.display   = state === 'error'   ? 'block' : 'none';
       document.getElementById(`result-${id}`).classList.toggle('active', state === 'result');
     }
+
+    // ── EMAIL RENDERER ────────────────────────────────────────────────────
+    // Stores the raw Markdown body and updates the DOM with rendered HTML.
+    // Raw body is stored so revisions can reference it (preserving hyperlinks).
     function renderEmail(id, subject, body) {
       panelStates[id].lastRawBody = body;
       document.getElementById(`subj-${id}`).textContent = subject || '(No subject)';
       document.getElementById(`body-${id}`).innerHTML = renderBody(body);
     }
 
+    // ── GENERATE BUTTON ENABLE/DISABLE CHECK ─────────────────────────────
+    // The Generate button is only enabled when Founder Name, Startup Name,
+    // Website, and API Key are all non-empty.
     const inputs = [`fn-${i}`, `sn-${i}`, `sw-${i}`].map(id => document.getElementById(id));
     function checkGen(id) {
       const ok = [`fn-${id}`,`sn-${id}`,`sw-${id}`].every(x => document.getElementById(x).value.trim() !== '') && getApiKey() !== '';
       document.getElementById(`gen-${id}`).disabled = !ok;
     }
-    checkGenFns[i] = checkGen;
+    checkGenFns[i] = checkGen; // Store reference so drag-drop can call it
+
+    // Re-check Generate button whenever input fields or API key change
     inputs.forEach(inp => inp.addEventListener('input', () => checkGen(i)));
+
+    // Enable/disable Send button based on whether a founder email is entered
+    // and an email has already been generated
     document.getElementById(`te-${i}`).addEventListener('input', function() {
       const hasEmail = this.value.trim() !== '';
       const hasResult = document.getElementById(`result-${i}`).classList.contains('active');
@@ -790,26 +961,34 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     });
     document.getElementById('api-key').addEventListener('input', () => checkGen(i));
 
+    // ── PER-PANEL BUTTON HANDLERS (IIFE to capture correct `id`) ─────────
+    // Using an IIFE (immediately invoked function expression) ensures that
+    // the `id` variable captured in each async callback refers to the correct
+    // panel number rather than the loop variable `i`.
     (function(id) {
       const genBtnEl = document.getElementById(`gen-${id}`);
-
       const genBtnOrigHTML = genBtnEl.innerHTML;
       const revBtnEl = document.getElementById(`rev-${id}`);
       const revBtnOrigHTML = revBtnEl.innerHTML;
 
-      // Quick-btn clicks fill feedback textarea
+      // ── QUICK-ACTION BUTTON CLICKS ──────────────────────────────────────
+      // Each quick-action button fills the feedback textarea with a preset
+      // prompt and immediately triggers the Revise button's click handler.
       document.getElementById(`qbtns-${id}`).querySelectorAll('.q-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.getElementById(`fb-${id}`).value = btn.dataset.feedback;
           document.getElementById(`fba-${id}`).classList.add('visible');
-          revBtnEl.click();
+          revBtnEl.click(); // Auto-run revision without needing to click Revise
         });
       });
 
-      // Revise button
+      // ── REVISE BUTTON ──────────────────────────────────────────────────
+      // Sends the current email + feedback instructions to Claude (Haiku, no web search)
+      // and updates the panel with the revised email.
+      // Uses lastRawBody (the stored Markdown) so hyperlinks are preserved.
       revBtnEl.addEventListener('click', async () => {
         const feedback = document.getElementById(`fb-${id}`).value.trim();
-        if (!feedback) return;
+        if (!feedback) return; // Do nothing if feedback textarea is empty
         const currentSubject = document.getElementById(`subj-${id}`).textContent;
         const currentBody    = panelStates[id].lastRawBody || document.getElementById(`body-${id}`).innerText;
         revBtnEl.disabled = true;
@@ -818,10 +997,10 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         document.getElementById(`loading-txt-${id}`).textContent = 'Revising…';
         try {
           const messages = [{ role: 'user', content: `Here is an outreach email:\n\nSUBJECT: ${currentSubject}\n\n${currentBody}\n\nRevise only the middle paragraph based on this feedback: ${feedback}\n\nCRITICAL RULES:\n- Keep paragraph 1 (greeting + intro) EXACTLY as written, word for word\n- Keep paragraph 3 (CTA + closing) EXACTLY as written, word for word. "Best," and the sender name must be on consecutive lines with no blank line between them.\n- Only rewrite paragraph 2\n- Paragraph 2 must be EXACTLY 2 sentences, no more, no less, written as one continuous block with NO line breaks between sentences\n- First sentence of paragraph 2 must be ONLY: "Really love what you are building at [company name]."\n- Second sentence: one concise, natural sentence about why it's relevant or a related industry trend. No product summary. No m-dashes.\n- Exactly 3 paragraphs total\n- Markdown links only: [White Star Capital](https://www.whitestarcapital.com/) and [this link](${getCalendly()})\n- "Best," and the sender name must be on consecutive lines with no blank line between them.\n\nEnd with SUBJECT: on its own line (punchy, specific, no bold).` }];
-          const raw = await callAPI(messages, false);
+          const raw = await callAPI(messages, false); // false = use Haiku, no web search
           const { subject, body } = parseOutput(raw);
           renderEmail(id, subject, body);
-          document.getElementById(`fb-${id}`).value = '';
+          document.getElementById(`fb-${id}`).value = ''; // Clear feedback after revision
           document.getElementById(`send-${id}`).disabled = !document.getElementById(`te-${id}`).value.trim();
           showState(id, 'result');
         } catch(err) {
@@ -833,6 +1012,9 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         }
       });
 
+      // ── GENERATE BUTTON ────────────────────────────────────────────────
+      // Calls Claude Sonnet with web search enabled to research the startup
+      // and write a personalised outreach email.
       genBtnEl.addEventListener('click', async () => {
         const fn = document.getElementById(`fn-${id}`).value.trim();
         const sn = document.getElementById(`sn-${id}`).value.trim();
@@ -843,10 +1025,10 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         genBtnEl.innerHTML = `<span class="spinner"></span>`;
         const messages = [{ role: 'user', content: buildPrompt(fn, sn, sw) }];
         try {
-          const raw = await callAPI(messages, true);
+          const raw = await callAPI(messages, true); // true = use Sonnet with web search
           const { subject, body } = parseOutput(raw);
           renderEmail(id, subject, body);
-
+          // Show editing hint and reveal quick-action / feedback area
           document.getElementById(`edit-hint-${id}`).classList.add('visible');
           document.getElementById(`qbtns-${id}`).classList.add('visible');
           document.getElementById(`fba-${id}`).classList.add('visible');
@@ -861,9 +1043,12 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         }
       });
 
+      // ── COPY BUTTON ────────────────────────────────────────────────────
+      // Copies the email body to clipboard in both HTML (preserving links for
+      // pasting into Gmail/Outlook) and plain text formats simultaneously.
       document.getElementById(`copy-${id}`).addEventListener('click', () => {
         const bodyEl   = document.getElementById(`body-${id}`);
-        const bodyHTML = bodyEl.innerHTML.replace(/<p>/g, '<p style="margin:0 0 1em 0;">');
+        const bodyHTML = bodyEl.innerHTML.replace(/<p>/g, '<p style="margin:0 0 1em 0;">'); // Inline margin for email clients
         const bodyPlain = bodyEl.innerText;
         try {
           const item = new ClipboardItem({
@@ -875,9 +1060,13 @@ STARTUP_WEBSITE: ${startupWebsite}`;
             btn.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied`;
             setTimeout(() => { btn.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`; }, 2000);
           });
-        } catch { navigator.clipboard.writeText(bodyPlain); }
+        } catch { navigator.clipboard.writeText(bodyPlain); } // Fallback to plain text
       });
 
+      // ── SEND BUTTON ────────────────────────────────────────────────────
+      // Sends the email via EmailJS (no backend required).
+      // Only visible when Ted is selected as sender.
+      // After a successful send, auto-resets the panel after 1.5s.
       const sendBtnEl = document.getElementById(`send-${id}`);
       const sendBtnOrigHTML = sendBtnEl.innerHTML;
       sendBtnEl.addEventListener('click', async () => {
@@ -891,7 +1080,26 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         try {
           await emailjs.send(EJ_SERVICE, EJ_TEMPLATE, { to_email: toEmail, subject, body: bodyHTML });
           sendBtnEl.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Sent`;
-          setTimeout(() => { document.getElementById(`reset-${id}`).click(); }, 1500);
+
+          // ── SLACK NOTIFICATION ──────────────────────────────────────────
+          // POST to Make.com webhook → Make forwards to Slack.
+          // Silently ignored if no webhook URL is configured.
+          const webhookUrl = document.getElementById('slack-webhook').value.trim();
+          if (webhookUrl) {
+            const startupName = document.getElementById(`sn-${id}`).value.trim();
+            fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sender:   getSender(),
+                founder:  toEmail,
+                startup:  startupName,
+                subject:  subject,
+              })
+            }).catch(() => {}); // Fire-and-forget — don't block the UI on failure
+          }
+
+          setTimeout(() => { document.getElementById(`reset-${id}`).click(); }, 1500); // Auto-reset after showing "Sent"
         } catch(err) {
           alert(`Failed to send: ${err.text || err.message || 'Unknown error'}`);
           sendBtnEl.innerHTML = sendBtnOrigHTML;
@@ -899,10 +1107,13 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         }
       });
 
+      // ── NEW / RESET BUTTON ─────────────────────────────────────────────
+      // Clears all inputs and resets the panel back to its empty state.
       document.getElementById(`reset-${id}`).addEventListener('click', () => {
         panelStates[id].lastRawBody = '';
+        // Clear all input fields including founder email
         [`fn-${id}`,`sn-${id}`,`sw-${id}`,`te-${id}`].forEach(x => document.getElementById(x).value = '');
-
+        // Hide edit hints, quick-action buttons, and feedback area
         document.getElementById(`edit-hint-${id}`).classList.remove('visible');
         document.getElementById(`fb-${id}`).value = '';
         document.getElementById(`qbtns-${id}`).classList.remove('visible');
@@ -914,10 +1125,16 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     })(i);
   }
 
+  // ── EMAILJS INITIALISATION ────────────────────────────────────────────────
+  // EmailJS allows sending emails from the browser without a backend.
+  // The public key, service ID, and template ID are set up in the EmailJS dashboard.
   emailjs.init({ publicKey: 'sgeYjbV3sJ1qhHb17' });
   const EJ_SERVICE  = 'service_ct0eh36';
   const EJ_TEMPLATE = 'template_r0mm08t';
 
+  // ── API KEY VISIBILITY TOGGLE ─────────────────────────────────────────────
+  // Switches the API key input between password (hidden) and text (visible)
+  // and updates the eye icon SVG accordingly.
   document.getElementById('toggle-key').addEventListener('click', () => {
     const inp = document.getElementById('api-key');
     const ico = document.getElementById('eye-icon');
@@ -930,6 +1147,9 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     }
   });
 
+  // ── SEND BUTTON VISIBILITY ────────────────────────────────────────────────
+  // The Send button is only shown when Ted is the selected sender (EmailJS
+  // is configured with Ted's email account). Toggled on every sender change.
   function updateSendBtnVisibility() {
     const isTed = document.getElementById('sender-select').value === 'Ted';
     document.querySelectorAll('[id^="send-"]').forEach(btn => {
@@ -937,34 +1157,43 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     });
   }
 
+  // ── SENDER CHANGE HANDLER ─────────────────────────────────────────────────
+  // When sender changes: auto-fill Calendly URL from the option's data-calendly
+  // attribute, and update Send button visibility.
   document.getElementById('sender-select').addEventListener('change', function() {
     const cal = this.options[this.selectedIndex].getAttribute('data-calendly');
     if (cal) document.getElementById('calendly-url').value = cal;
     updateSendBtnVisibility();
   });
 
-  // Run once on load
+  // Run on page load to set initial Send button visibility
   updateSendBtnVisibility();
 
   // ── CSV UPLOAD & DRAG-AND-DROP ────────────────────────────────────────────
-  let dragPayload = null;
+  let dragPayload = null; // Holds data for the card currently being dragged
 
+  // ── RENDER COMPANY CARDS ──────────────────────────────────────────────────
+  // Creates a draggable card in the sidebar for each company from the CSV.
+  // Cards show: company name, website domain, founder name + email.
+  // Dragging a card onto a panel fills all 4 input fields automatically,
+  // then removes the card from the sidebar so it can't be used twice.
   function renderCards(companies) {
     const list    = document.getElementById('results-list');
     const countEl = document.getElementById('results-count');
-    list.innerHTML = '';
+    list.innerHTML = ''; // Clear any existing cards
     countEl.textContent = `${companies.length} companies`;
     countEl.classList.add('visible');
 
     companies.forEach(co => {
-      const name   = co.name   || '';
-      const domain = co.domain || '';
+      const name         = co.name   || '';
+      const domain       = co.domain || '';
       const founderName  = co.ceoName  || '';
       const founderEmail = co.ceoEmail || '';
 
       const card = document.createElement('div');
       card.className = 'company-card';
       card.draggable = true;
+      // Store data in dataset so it's accessible from the drag handler
       card.dataset.name         = name;
       card.dataset.domain       = domain;
       card.dataset.founderName  = founderName;
@@ -977,6 +1206,8 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         ${founderName  ? `<div class="card-sub" style="color:var(--text-muted);font-size:9px;margin-top:3px;">${founderName}${founderEmail ? ' · ' + founderEmail : ''}</div>` : ''}
       `;
 
+      // On drag start: store the card's data in dragPayload so the drop handler
+      // can access it, and keep a reference to the card element itself for removal.
       card.addEventListener('dragstart', (e) => {
         card.classList.add('dragging');
         dragPayload = { name, domain, founderName, founderEmail, card };
@@ -988,48 +1219,58 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     });
   }
 
-  // Drop zones on panels
+  // ── PANEL DROP ZONES ──────────────────────────────────────────────────────
+  // Makes each panel accept dropped company cards.
+  // On drop: fills all input fields, removes the card from the sidebar,
+  // and re-checks whether the Generate button should be enabled.
   document.querySelectorAll('.panel').forEach((panel, idx) => {
     const panelId = idx + 1;
+
     panel.addEventListener('dragover', (e) => {
       if (!dragPayload) return;
-      e.preventDefault();
-      panel.classList.add('drag-over');
+      e.preventDefault(); // Required to allow dropping
+      panel.classList.add('drag-over'); // Shows the gold drop-zone overlay
     });
+
     panel.addEventListener('dragleave', (e) => {
+      // Only remove highlight if leaving the panel entirely (not just moving to a child element)
       if (!panel.contains(e.relatedTarget)) panel.classList.remove('drag-over');
     });
+
     panel.addEventListener('drop', (e) => {
       e.preventDefault();
       panel.classList.remove('drag-over');
       if (!dragPayload) return;
       const { name, domain, founderName, founderEmail, card } = dragPayload;
       dragPayload = null;
-      if (card) card.remove();
+      if (card) card.remove(); // Remove the card from the sidebar so it can't be reused
 
+      // Fill all panel inputs with data from the dropped card
       document.getElementById(`sn-${panelId}`).value = name;
       const website = domain ? (domain.startsWith('http') ? domain : 'https://' + domain) : '';
       document.getElementById(`sw-${panelId}`).value = website;
       document.getElementById(`fn-${panelId}`).value = founderName;
       document.getElementById(`te-${panelId}`).value = founderEmail;
 
+      // Re-evaluate Generate button state now that inputs are filled
       if (checkGenFns[panelId]) checkGenFns[panelId](panelId);
     });
   });
 
-  // CSV Upload
+  // ── CSV FILE UPLOAD HANDLER ───────────────────────────────────────────────
+  // Triggered when the user selects a CSV file. Parses it and calls renderCards().
   document.getElementById('csv-file-input').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const label  = document.getElementById('csv-upload-label');
     const status = document.getElementById('csv-status');
-    label.style.opacity = '0.5';
+    label.style.opacity = '0.5'; // Dim the upload button while processing
     status.textContent = 'Parsing…';
 
     const text = await file.text();
     const rows = parseCSV(text);
     label.style.opacity = '1';
-    e.target.value = '';
+    e.target.value = ''; // Reset file input so the same file can be re-uploaded
 
     if (!rows.length) {
       status.textContent = 'No rows found. Check column headers.';
@@ -1039,24 +1280,34 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     renderCards(rows.map(r => ({
       name:     r.name,
       domain:   r.domain,
-      ceoName:  r.founderName,
+      ceoName:  r.founderName,  // Mapped to ceoName for renderCards compatibility
       ceoEmail: r.founderEmail,
     })));
 
     status.textContent = `✓ ${rows.length} companies loaded`;
   });
 
+  // ── CSV PARSER ────────────────────────────────────────────────────────────
+  // Parses a CSV string into an array of row objects.
+  // Detects columns by matching header names (flexible — handles variations
+  // like "company name", "startup", "website", "domain", etc.)
   function parseCSV(text) {
     const lines = text.trim().split(/\r?\n/);
-    if (lines.length < 2) return [];
+    if (lines.length < 2) return []; // Need at least a header row + one data row
+
+    // Normalise headers: lowercase, strip quotes
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g,''));
+
+    // Find column indices by matching header strings
     const nameIdx    = headers.findIndex(h => h === 'company' || h === 'company name' || h === 'startup' || h === 'startup name' || h === 'name');
     const domainIdx  = headers.findIndex(h => h.includes('website') || h.includes('domain') || h.includes('url'));
     const founderIdx = headers.findIndex(h => (h.includes('founder') && h.includes('name')) || h === 'founder' || h === 'ceo' || h === 'ceo name');
     const emailIdx   = headers.findIndex(h => h.includes('email'));
-    if (nameIdx === -1 && domainIdx === -1) return [];
+
+    if (nameIdx === -1 && domainIdx === -1) return []; // Can't proceed without at least a name or domain column
+
     return lines.slice(1).map(line => {
-      if (!line.trim()) return null;
+      if (!line.trim()) return null; // Skip blank lines
       const cols = splitCSVLine(line);
       return {
         name:        nameIdx    >= 0 ? cols[nameIdx]?.replace(/['"]/g,'').trim()    : '',
@@ -1067,17 +1318,23 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     }).filter(Boolean).filter(r => r.name || r.domain);
   }
 
+  // ── CSV LINE SPLITTER ─────────────────────────────────────────────────────
+  // Splits a CSV line by commas, correctly handling quoted fields that may
+  // contain commas (e.g. "Smith, Jane" should not be split).
   function splitCSVLine(line) {
     const result = []; let cur = ''; let inQ = false;
     for (const ch of line) {
-      if (ch === '"') { inQ = !inQ; }
-      else if (ch === ',' && !inQ) { result.push(cur); cur = ''; }
+      if (ch === '"') { inQ = !inQ; }              // Toggle quoted-field mode
+      else if (ch === ',' && !inQ) { result.push(cur); cur = ''; } // Split on comma (if not quoted)
       else cur += ch;
     }
-    result.push(cur);
+    result.push(cur); // Push the last field
     return result;
   }
 
+  // ── DOMAIN CLEANER ────────────────────────────────────────────────────────
+  // Strips protocol (https://) and www. prefix from a URL so we store just
+  // the bare domain (e.g. "acme.com"). Prepended with https:// again on drop.
   function cleanDomain(raw) {
     if (!raw) return '';
     return raw.replace(/^https?:\/\//,'').replace(/^www\./,'').split('/')[0].trim();
