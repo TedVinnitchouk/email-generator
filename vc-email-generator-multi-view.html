@@ -642,7 +642,10 @@ STARTUP_WEBSITE: ${startupWebsite}`;
     const processed = paras.map((p, i) => {
       const t = p.trim();
       if (i === 0) return t;
-      if (/^Best,/i.test(t)) return t;
+      // Ensure "Best,\nName" renders as two separate lines
+      if (/^Best,/i.test(t)) {
+        return t.replace(/^(Best,)\s*\n\s*(.+)$/i, '$1\n\n$2');
+      }
       return t.replace(/\n/g, ' ');
     });
     return marked.parse(processed.join('\n\n'));
