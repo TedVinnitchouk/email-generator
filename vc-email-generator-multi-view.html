@@ -799,7 +799,7 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         btn.addEventListener('click', () => {
           document.getElementById(`fb-${id}`).value = btn.dataset.feedback;
           document.getElementById(`fba-${id}`).classList.add('visible');
-          document.getElementById(`fb-${id}`).focus();
+          revBtnEl.click();
         });
       });
 
