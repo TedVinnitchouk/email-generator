@@ -1,5 +1,0 @@
-{
-  "functions": {
-    "api/harmonic.js": { "maxDuration": 15 }
-  }
-}
