@@ -808,7 +808,7 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         const feedback = document.getElementById(`fb-${id}`).value.trim();
         if (!feedback) return;
         const currentSubject = document.getElementById(`subj-${id}`).textContent;
-        const currentBody    = document.getElementById(`body-${id}`).innerText;
+        const currentBody    = panelStates[id].lastRawBody || document.getElementById(`body-${id}`).innerText;
         revBtnEl.disabled = true;
         revBtnEl.innerHTML = `<span class="spinner"></span> Revising…`;
         showState(id, 'loading');
