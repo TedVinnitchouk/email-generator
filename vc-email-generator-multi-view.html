@@ -210,51 +210,42 @@
     .gen-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(201,168,76,0.45); }
     .gen-btn:active:not(:disabled) { transform: translateY(0); }
     .gen-btn:disabled { opacity: 0.28; cursor: not-allowed; }
-
-    .panel-rule { height: 1px; background: var(--gold-border); flex-shrink: 0; margin: 1px 0; }
-
+    .panel-rule { height: 1px; background: var(--gold-border); margin: 6px 0 8px; flex-shrink: 0; }
     .quick-btns { display: none; flex-direction: column; gap: 3px; }
     .quick-btns.visible { display: flex; }
     .q-btn {
-      width: 100%; padding: 5px 7px;
-      background: rgba(201,168,76,0.03);
-      border: 1px solid rgba(201,168,76,0.13);
-      border-radius: 2px; color: var(--text-dim);
-      font-family: 'Montserrat', sans-serif;
-      font-size: 8.5px; font-weight: 500; letter-spacing: 0.04em;
-      cursor: pointer; text-align: left;
       display: flex; align-items: center; gap: 6px;
-      transition: all 0.15s;
+      padding: 5px 8px; background: transparent;
+      border: 1px solid rgba(201,168,76,0.18); border-radius: 2px;
+      color: rgba(245,240,232,0.55); font-family: var(--font-ui);
+      font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+      cursor: pointer; transition: all 0.15s; text-align: left;
     }
     .q-btn:hover { background: rgba(201,168,76,0.1); border-color: rgba(201,168,76,0.35); color: var(--gold-light); }
     .q-btn svg { flex-shrink: 0; opacity: 0.55; }
     .q-btn:hover svg { opacity: 1; }
-
     .feedback-area { display: none; flex-direction: column; gap: 4px; }
     .feedback-area.visible { display: flex; }
     .feedback-area textarea {
-      width: 100%; background: rgba(255,255,255,0.025);
-      border: 1px solid rgba(201,168,76,0.15);
-      border-radius: 2px; padding: 6px 7px; color: var(--text);
-      font-family: 'Montserrat', sans-serif; font-size: 10px;
-      outline: none; resize: none; height: 48px;
-      transition: border-color 0.2s; line-height: 1.5;
+      width: 100%; min-height: 52px; background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(201,168,76,0.2); border-radius: 2px;
+      padding: 6px 8px; color: var(--text);
+      font-family: var(--font-ui); font-size: 10px; resize: vertical; outline: none;
     }
     .feedback-area textarea::placeholder { color: var(--text-muted); }
     .feedback-area textarea:focus { border-color: rgba(201,168,76,0.45); }
-
     .rev-btn {
-      width: 100%; padding: 6px 8px;
-      background: transparent;
-      border: 1px solid var(--gold-border); border-radius: 2px;
-      color: var(--gold); font-family: 'Montserrat', sans-serif;
-      font-size: 8.5px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 5px;
-      transition: background 0.18s, border-color 0.18s;
+      padding: 6px 10px; background: transparent;
+      border: 1px solid rgba(201,168,76,0.25); border-radius: 2px;
+      color: var(--gold); font-family: var(--font-ui); font-size: 9px;
+      font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      cursor: pointer; display: flex; align-items: center; gap: 5px;
+      transition: all 0.15s;
     }
     .rev-btn:hover:not(:disabled) { background: var(--gold-glow); border-color: rgba(201,168,76,0.45); }
     .rev-btn:disabled { opacity: 0.28; cursor: not-allowed; }
+
+
 
     /* ── OUTPUT SIDE ── */
     .panel-output { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -725,6 +716,7 @@ STARTUP_WEBSITE: ${startupWebsite}`;
               Revise
             </button>
           </div>
+
         </div>
         <div class="panel-output" id="output-${i}">
           <div class="p-empty" id="empty-${i}">
@@ -797,9 +789,46 @@ STARTUP_WEBSITE: ${startupWebsite}`;
 
     (function(id) {
       const genBtnEl = document.getElementById(`gen-${id}`);
-      const revBtnEl = document.getElementById(`rev-${id}`);
+
       const genBtnOrigHTML = genBtnEl.innerHTML;
+      const revBtnEl = document.getElementById(`rev-${id}`);
       const revBtnOrigHTML = revBtnEl.innerHTML;
+
+      // Quick-btn clicks fill feedback textarea
+      document.getElementById(`qbtns-${id}`).querySelectorAll('.q-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById(`fb-${id}`).value = btn.dataset.feedback;
+          document.getElementById(`fba-${id}`).classList.add('visible');
+          document.getElementById(`fb-${id}`).focus();
+        });
+      });
+
+      // Revise button
+      revBtnEl.addEventListener('click', async () => {
+        const feedback = document.getElementById(`fb-${id}`).value.trim();
+        if (!feedback) return;
+        const currentSubject = document.getElementById(`subj-${id}`).textContent;
+        const currentBody    = document.getElementById(`body-${id}`).innerText;
+        revBtnEl.disabled = true;
+        revBtnEl.innerHTML = `<span class="spinner"></span> Revising…`;
+        showState(id, 'loading');
+        document.getElementById(`loading-txt-${id}`).textContent = 'Revising…';
+        try {
+          const messages = [{ role: 'user', content: `Here is an outreach email:\n\nSUBJECT: ${currentSubject}\n\n${currentBody}\n\nRevise only the middle paragraph based on this feedback: ${feedback}\n\nCRITICAL RULES:\n- Keep paragraph 1 (greeting + intro) EXACTLY as written, word for word\n- Keep paragraph 3 (CTA + closing) EXACTLY as written, word for word. "Best," and the sender name must be on consecutive lines with no blank line between them.\n- Only rewrite paragraph 2\n- Paragraph 2 must be EXACTLY 2 sentences, no more, no less, written as one continuous block with NO line breaks between sentences\n- First sentence of paragraph 2 must be ONLY: "Really love what you are building at [company name]."\n- Second sentence: one concise, natural sentence about why it's relevant or a related industry trend. No product summary. No m-dashes.\n- Exactly 3 paragraphs total\n- Markdown links only: [White Star Capital](https://www.whitestarcapital.com/) and [this link](${getCalendly()})\n- "Best," and the sender name must be on consecutive lines with no blank line between them.\n\nEnd with SUBJECT: on its own line (punchy, specific, no bold).` }];
+          const raw = await callAPI(messages, false);
+          const { subject, body } = parseOutput(raw);
+          renderEmail(id, subject, body);
+          document.getElementById(`fb-${id}`).value = '';
+          document.getElementById(`send-${id}`).disabled = !document.getElementById(`te-${id}`).value.trim();
+          showState(id, 'result');
+        } catch(err) {
+          document.getElementById(`error-${id}`).innerHTML = `<strong>Error:</strong> ${err.message}`;
+          showState(id, 'error');
+        } finally {
+          revBtnEl.innerHTML = revBtnOrigHTML;
+          revBtnEl.disabled = false;
+        }
+      });
 
       genBtnEl.addEventListener('click', async () => {
         const fn = document.getElementById(`fn-${id}`).value.trim();
@@ -814,9 +843,10 @@ STARTUP_WEBSITE: ${startupWebsite}`;
           const raw = await callAPI(messages, true);
           const { subject, body } = parseOutput(raw);
           renderEmail(id, subject, body);
+
+          document.getElementById(`edit-hint-${id}`).classList.add('visible');
           document.getElementById(`qbtns-${id}`).classList.add('visible');
           document.getElementById(`fba-${id}`).classList.add('visible');
-          document.getElementById(`edit-hint-${id}`).classList.add('visible');
           document.getElementById(`send-${id}`).disabled = !document.getElementById(`te-${id}`).value.trim();
           showState(id, 'result');
         } catch(err) {
@@ -825,39 +855,6 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         } finally {
           genBtnEl.innerHTML = genBtnOrigHTML;
           checkGen(id);
-        }
-      });
-
-      document.getElementById(`qbtns-${id}`).querySelectorAll('.q-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.getElementById(`fb-${id}`).value = btn.dataset.feedback;
-          revBtnEl.click();
-        });
-      });
-
-      revBtnEl.addEventListener('click', async () => {
-        const feedback = document.getElementById(`fb-${id}`).value.trim();
-        if (!feedback) return;
-        const currentSubject = document.getElementById(`subj-${id}`).textContent;
-        const currentBody    = panelStates[id].lastRawBody;
-        document.getElementById(`loading-txt-${id}`).textContent = 'Revising…';
-        showState(id, 'loading');
-        revBtnEl.disabled = true;
-        revBtnEl.innerHTML = `<span class="spinner"></span>`;
-        const messages = [{ role: 'user', content: `Here is an outreach email:\n\nSUBJECT: ${currentSubject}\n\n${currentBody}\n\nRevise only the middle paragraph based on this feedback: ${feedback}\n\nCRITICAL RULES:\n- Keep paragraph 1 (greeting + intro) EXACTLY as written, word for word\n- Keep paragraph 3 (CTA + closing) EXACTLY as written, word for word. "Best," and the sender name must be on consecutive lines with no blank line between them.\n- Only rewrite paragraph 2\n- Paragraph 2 must be EXACTLY 2 sentences, no more, no less, written as one continuous block with NO line breaks between sentences\n- First sentence of paragraph 2 must be ONLY: "Really love what you are building at [company name]."\n- Second sentence: one concise, natural sentence about why it's relevant or a related industry trend. No product summary. No m-dashes.\n- Exactly 3 paragraphs total\n- Markdown links only: [White Star Capital](https://www.whitestarcapital.com/) and [this link](${getCalendly()})\n- "Best," and the sender name must be on consecutive lines with no blank line between them.\n\nEnd with SUBJECT: on its own line (punchy, specific, no bold).` }];
-        try {
-          const raw = await callAPI(messages, false);
-          const { subject, body } = parseOutput(raw);
-          renderEmail(id, subject, body);
-          document.getElementById(`fb-${id}`).value = '';
-          document.getElementById(`send-${id}`).disabled = !document.getElementById(`te-${id}`).value.trim();
-          showState(id, 'result');
-        } catch(err) {
-          document.getElementById(`error-${id}`).innerHTML = `<strong>Error:</strong> ${err.message}`;
-          showState(id, 'error');
-        } finally {
-          revBtnEl.innerHTML = revBtnOrigHTML;
-          revBtnEl.disabled = false;
         }
       });
 
@@ -902,10 +899,11 @@ STARTUP_WEBSITE: ${startupWebsite}`;
       document.getElementById(`reset-${id}`).addEventListener('click', () => {
         panelStates[id].lastRawBody = '';
         [`fn-${id}`,`sn-${id}`,`sw-${id}`].forEach(x => document.getElementById(x).value = '');
+
+        document.getElementById(`edit-hint-${id}`).classList.remove('visible');
         document.getElementById(`fb-${id}`).value = '';
         document.getElementById(`qbtns-${id}`).classList.remove('visible');
         document.getElementById(`fba-${id}`).classList.remove('visible');
-        document.getElementById(`edit-hint-${id}`).classList.remove('visible');
         document.getElementById(`send-${id}`).disabled = true;
         showState(id, 'empty');
         checkGen(id);
@@ -978,7 +976,7 @@ STARTUP_WEBSITE: ${startupWebsite}`;
 
       card.addEventListener('dragstart', (e) => {
         card.classList.add('dragging');
-        dragPayload = { name, domain, founderName, founderEmail };
+        dragPayload = { name, domain, founderName, founderEmail, card };
         e.dataTransfer.effectAllowed = 'copy';
         e.dataTransfer.setData('text/plain', name);
       });
@@ -1002,8 +1000,9 @@ STARTUP_WEBSITE: ${startupWebsite}`;
       e.preventDefault();
       panel.classList.remove('drag-over');
       if (!dragPayload) return;
-      const { name, domain, founderName, founderEmail } = dragPayload;
+      const { name, domain, founderName, founderEmail, card } = dragPayload;
       dragPayload = null;
+      if (card) card.remove();
 
       document.getElementById(`sn-${panelId}`).value = name;
       const website = domain ? (domain.startsWith('http') ? domain : 'https://' + domain) : '';
