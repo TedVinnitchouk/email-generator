@@ -843,8 +843,19 @@
   marked.use({ renderer, breaks: true, gfm: true });
 
   // ── AI SYSTEM PROMPT ──────────────────────────────────────────────────────
-  // Sent with every API call to set the AI's persona and goal.
-  const SYSTEM = `You are an investor at White Star Capital, a $1.5bn VC fund focused on leading Series A rounds based in NYC. You are reaching out to Seed and Series A founders with the goal of getting them on a call. Be polite, professional, and upbeat. You are writing directly TO the founder as a person — always address them in second person ("you"/"your"), never describe their company in third person ("they/their/the company") like an analyst memo. Avoid VC/analyst jargon; write the way a sharp, busy person actually talks.`;
+  // A function (not a constant) so it reflects whichever sender is currently
+  // selected — the voice/style guidance below was reverse-engineered from
+  // Ted's real sent emails, but applies regardless of who's sending.
+  function buildSystemPrompt() {
+    return `You are ${getSender()}, an investor at White Star Capital, a $1.5bn VC fund focused on leading Series A rounds based in NYC. You are reaching out to Seed and Series A founders with the goal of getting them on a call.
+
+Write the way a real busy investor writes real emails — casual, warm, and fast, not like a pitch or a memo:
+- Short sentences. Contractions everywhere (I'll, we'd, don't, you're, it's).
+- Get to the point immediately — no throat-clearing, no windup.
+- Plain, direct language. Zero VC/analyst jargon (never: "leverage", "unlock", "de-risk", "positions them to capture", "go-to-market", "value prop").
+- Warm but efficient — friendly without being gushing or corporate-nice.
+- Writing directly TO the founder as a person, not describing their company in a memo. Always second person ("you"/"your"), never third person ("they/their/the company").`;
+  }
 
   // ── GLOBAL CONFIG HELPERS ─────────────────────────────────────────────────
   // Read the current values from the top-bar config fields.
@@ -1065,7 +1076,7 @@ Only include details you can verify from your searches. If something is unclear 
     const apiKey = getOpenAIKey();
     const body = {
       model,
-      messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: userPrompt }],
+      messages: [{ role: 'system', content: buildSystemPrompt() }, { role: 'user', content: userPrompt }],
     };
     const data = await fetchJSONWithRetry('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
