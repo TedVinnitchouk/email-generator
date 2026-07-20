@@ -144,16 +144,16 @@
 
     /* API key field — wraps the input and the show/hide eye button together */
     .key-wrap { position: relative; display: flex; align-items: center; }
-    .key-wrap input { width: 200px; padding-right: 22px; }
-    /* Eye icon button to toggle password visibility */
-    #toggle-key {
+    .key-wrap input { width: 155px; padding-right: 22px; }
+    /* Eye icon button to toggle password visibility (shared by both key fields) */
+    .toggle-key-btn {
       position: absolute; right: 0; background: none; border: none;
       cursor: pointer; color: var(--text-muted); padding: 0;
       display: flex; align-items: center; transition: color 0.15s;
     }
-    #toggle-key:hover { color: var(--gold); }
+    .toggle-key-btn:hover { color: var(--gold); }
     .api-note { font-size: 7.5px; color: var(--text-muted); letter-spacing: 0.04em; }
-    #calendly-url { width: 220px; }
+    #calendly-url { width: 190px; }
 
     /* ── MAIN CONTENT WRAPPER ───────────────────────────────────────────────
        Sits below the top bar and fills the remaining viewport height.
@@ -586,14 +586,27 @@
 
   <!-- Config fields: API key, sender, Calendly URL -->
   <div class="top-config">
-    <!-- OpenAI API key — stored only in memory, never sent anywhere except the OpenAI API -->
+    <!-- Anthropic API key — used only by the Research Agent (Claude + web search) -->
     <div class="cfg-field">
-      <div class="cfg-label">OpenAI API Key</div>
+      <div class="cfg-label">Claude Key <span style="color:var(--text-muted);font-weight:400;letter-spacing:0;">(Research)</span></div>
       <div class="key-wrap">
-        <input id="api-key" type="password" placeholder="sk-proj-..." />
-        <!-- Eye button to toggle key visibility -->
-        <button id="toggle-key" title="Show/hide key">
-          <svg id="eye-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <input id="anthropic-api-key" type="password" placeholder="sk-ant-api03-..." />
+        <button id="toggle-key-anthropic" class="toggle-key-btn" title="Show/hide key">
+          <svg class="eye-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+      <div class="api-note">Sent directly to Anthropic · Never stored</div>
+    </div>
+
+    <!-- OpenAI API key — used only by the Writer Agent (GPT, no search needed) -->
+    <div class="cfg-field">
+      <div class="cfg-label">OpenAI Key <span style="color:var(--text-muted);font-weight:400;letter-spacing:0;">(Writer)</span></div>
+      <div class="key-wrap">
+        <input id="openai-api-key" type="password" placeholder="sk-proj-..." />
+        <button id="toggle-key-openai" class="toggle-key-btn" title="Show/hide key">
+          <svg class="eye-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
           </svg>
         </button>
@@ -837,7 +850,8 @@
   // Read the current values from the top-bar config fields.
   function getSender()   { return document.getElementById('sender-select').value.trim() || 'Ted'; }
   function getCalendly() { return document.getElementById('calendly-url').value.trim() || 'https://calendly.com/ted-whitestarcapital/30min'; }
-  function getApiKey()   { return document.getElementById('api-key').value.trim(); }
+  function getAnthropicKey() { return document.getElementById('anthropic-api-key').value.trim(); } // Research Agent (Claude)
+  function getOpenAIKey()    { return document.getElementById('openai-api-key').value.trim(); }    // Writer Agent (GPT)
 
   // ── EMAIL HISTORY (LEARNING FROM SENT EMAILS) ─────────────────────────────
   // Every time an email is actually sent, its final subject + body (including
@@ -893,17 +907,20 @@
     if (clearBtn) clearBtn.style.display = n > 0 ? 'inline' : 'none';
   }
 
-  // ── EMAIL PROMPT BUILDER ──────────────────────────────────────────────────
-  // Constructs the full user prompt sent to the model for initial email generation.
-  // The AI is instructed to visit the startup's website using web search before writing,
-  // ensuring the personalisation is accurate. Strict formatting rules are enforced in the prompt.
-  function buildPrompt(founderName, startupName, startupWebsite) {
+  // ── EMAIL PROMPT BUILDER (for the Writer Agent) ────────────────────────────
+  // Constructs the full user prompt sent to the Writer Agent (GPT). Unlike
+  // the old single-agent version, this does NOT ask the model to visit the
+  // website itself — the Research Agent (Claude) already did that fact-finding
+  // and its notes are embedded directly below. Strict formatting rules are
+  // still enforced here.
+  function buildWriterPrompt(founderName, startupName, researchNotes) {
     const sender   = getSender();
     const calendly = getCalendly();
     const firstName = founderName.split(' ')[0]; // First name only for the greeting
     return `You are a VC investor at White Star Capital, a $1.5bn fund in NYC leading Series A/B.
 
-Step 1 (required): Visit ${startupWebsite} and confirm what the company does from that site only. Do not confuse it with similarly named companies. If the site is unclear, omit uncertain details and keep personalization high-level but still industry-relevant.
+RESEARCH NOTES (already verified via web search by a research analyst — use ONLY these as your factual basis, do not invent or assume anything beyond them):
+${researchNotes}
 
 Output:
 1. A short, punchy subject line (max 8 words).
@@ -911,10 +928,10 @@ Output:
 
 Hard rules (no exceptions):
 - Exactly 3 distinct paragraphs
-- Paragraph 2 is 1 paragraph only, max 2 sentences
+- Paragraph 2 is 1 paragraph only, exactly 3 sentences (see structure below)
 - Tone: polite, professional, approachable
 - Goal: book a 30-minute intro call
-- Only reference information you are certain about from the website
+- Only reference information from the research notes above — nothing else
 - Always say "what you are building at ${startupName}"
 - Never: summarize the startup's business, use m-dashes, say "what you are working on", say "AI-powered agents" (use "agents" or "AI agents" only), add extra paragraphs
 
@@ -925,7 +942,7 @@ My name is ${sender} and I am a NYC-based investor at [White Star Capital](https
 
 Paragraph 2 (write this):
 - First sentence is ONLY this, word for word: "Really love what you are building at ${startupName}." Do not add anything else to this sentence.
-- Second sentence: a specific, concrete OBSERVATION about the company or the space they're in — something you noticed about their product, positioning, traction, or the market that shows you actually looked into them (not generic).
+- Second sentence: a specific, concrete OBSERVATION drawn from the research notes above — something that shows real research, not generic.
 - Third sentence: a STATEMENT of why that observation makes you bullish — the conviction/thesis, i.e. why it's exciting or well-positioned. This is the "so what" that follows from the observation.
 - Write all three sentences as ONE continuous paragraph with NO line breaks between them. Do not separate sentences onto new lines.
 - Natural, relevant, not corny. Exactly 3 sentences total. Never mention raises, funding, or press.
@@ -936,14 +953,13 @@ I'd love to grab 30 mins to dig deeper into what you are building and introduce 
 
 ${sender}
 
-Final checks: exactly 3 paragraphs, hyperlinks in Markdown format only (never raw URLs), personalization matches the website, streamlined and concise.
+Final checks: exactly 3 paragraphs, hyperlinks in Markdown format only (never raw URLs), personalization matches the research notes above, streamlined and concise.
 
 Output the subject line as the very last line prefixed exactly: SUBJECT: your subject here (no bold, no extra formatting)
 Subject line rules: max 8 words, highly creative, punchy, and attention-grabbing — must spark curiosity and stop someone mid-scroll. Sound organic and human, like a real person casually wrote it, not a marketing template. Make it memorable — something the founder would actually remember getting. Think like a journalist writing a headline — surprising, specific, a little bold. Never generic ("Quick intro", "Connecting", "Opportunity", "Loved what you're building"). Avoid clichés and overused VC-email phrasing. No punctuation at the end.
 
 FOUNDER_NAME: ${founderName}
-STARTUP_NAME: ${startupName}
-STARTUP_WEBSITE: ${startupWebsite}${buildReferenceExamplesBlock()}`;
+STARTUP_NAME: ${startupName}${buildReferenceExamplesBlock()}`;
   }
 
   // ── OUTPUT PARSER ─────────────────────────────────────────────────────────
@@ -972,81 +988,88 @@ STARTUP_WEBSITE: ${startupWebsite}${buildReferenceExamplesBlock()}`;
     return marked.parse(processed.join('\n\n'));
   }
 
-  // ── OPENAI API CALL ────────────────────────────────────────────────────────
-  // Sends messages to OpenAI directly from the browser.
-  // useWebSearch=true uses the Responses API with the built-in web_search tool
-  //   and gpt-5.5 (OpenAI's flagship model) — needed to research the startup.
-  // useWebSearch=false uses the Chat Completions API with gpt-5-mini (cheaper/
-  //   faster, no search needed) for revisions.
-  // Retries up to 3 times with exponential backoff on rate-limit (429) or
-  // server (5xx) errors, which are common under load.
-  async function callAPI(messages, useWebSearch = false, attempt = 1) {
-    const apiKey = getApiKey();
-    let res, data;
+  // ── SHARED FETCH-WITH-RETRY HELPER ─────────────────────────────────────────
+  // Both agents (Anthropic and OpenAI) hit rate-limit (429) or server (5xx)
+  // errors the same way, and both APIs return errors as { error: { message } },
+  // so the retry + error-parsing logic is centralized here rather than
+  // duplicated per-agent.
+  async function fetchJSONWithRetry(url, options, attempt = 1) {
+    const res = await fetch(url, options);
+    const data = await res.json();
 
-    if (useWebSearch) {
-      // Responses API — the only OpenAI endpoint whose web_search tool can
-      // decide for itself whether/what to search, rather than always searching.
-      const body = {
-        model: 'gpt-5.5',
-        instructions: SYSTEM,
-        input: messages, // Same [{role, content}] shape as Chat Completions messages
-        tools: [{ type: 'web_search' }],
-        max_output_tokens: 1200,
-      };
-      res = await fetch('https://api.openai.com/v1/responses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify(body)
-      });
-      data = await res.json();
-    } else {
-      // Chat Completions API — simple, cheap, no search needed for revisions
-      const body = {
-        model: 'gpt-5-mini',
-        messages: [{ role: 'system', content: SYSTEM }, ...messages],
-      };
-      res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify(body)
-      });
-      data = await res.json();
-    }
-
-    // Retry on rate-limit (429) or server errors (5xx) up to 3 times, with
-    // exponential backoff (2s, 4s, 8s) — these are usually transient.
     if ((res.status === 429 || res.status >= 500) && attempt <= 3) {
       const delay = Math.pow(2, attempt) * 1000;
       document.querySelectorAll('[id^="loading-txt-"]').forEach(el => {
         if (el.textContent) el.textContent = `API busy — retrying (${attempt}/3)…`;
       });
       await new Promise(r => setTimeout(r, delay));
-      return callAPI(messages, useWebSearch, attempt + 1);
+      return fetchJSONWithRetry(url, options, attempt + 1);
     }
 
     if (data.error) throw new Error(data.error.message || 'API error');
+    return data;
+  }
 
-    if (useWebSearch) {
-      // Responses API: walk data.output for "message" items and pull their
-      // output_text content parts (web_search_call items are skipped here)
-      const textParts = [];
-      (data.output || []).forEach(item => {
-        if (item.type === 'message' && item.content) {
-          item.content.forEach(c => { if (c.type === 'output_text') textParts.push(c.text); });
-        }
-      });
-      return textParts.join('\n');
-    } else {
-      // Chat Completions: plain choices[0].message.content
-      return data.choices?.[0]?.message?.content || '';
-    }
+  // ── RESEARCH AGENT (Claude) ─────────────────────────────────────────────────
+  // Visits the startup's website via Claude's built-in web_search tool and
+  // returns a short, factual research summary — NOT a finished email. This
+  // keeps the fact-finding step separate from the writing step, so each is
+  // handled by the model best suited to it.
+  async function runResearchAgent(founderName, startupName, startupWebsite) {
+    const apiKey = getAnthropicKey();
+    const prompt = `Visit ${startupWebsite} and research the company "${startupName}", run by ${founderName}. Do not confuse it with similarly named companies.
+
+Produce concise, factual research notes (under 130 words, plain text, no markdown) covering:
+1. What the company does, in one sentence.
+2. One specific, concrete OBSERVATION about their product, positioning, traction, or market — something that shows real research, not generic.
+3. Why that observation is notable — the angle that would make an investor bullish.
+
+Only include details you can verify from the site. If the site is unclear on something, omit it rather than guessing.`;
+
+    const body = {
+      model: 'claude-sonnet-5',
+      max_tokens: 500,
+      system: 'You are a meticulous VC research analyst. You only state facts you can verify from the website you visit, and you write in plain, concise prose.',
+      messages: [{ role: 'user', content: prompt }],
+      tools: [{ type: 'web_search_20250305', name: 'web_search' }]
+    };
+
+    const data = await fetchJSONWithRetry('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify(body)
+    });
+
+    return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+  }
+
+  // ── WRITER AGENT (GPT) ───────────────────────────────────────────────────────
+  // Takes research notes (from the Research Agent) or existing email + feedback
+  // (for revisions) and produces the actual email copy. No web search needed
+  // here since the Research Agent already did the fact-finding — this keeps
+  // the writer call fast and cheap via plain Chat Completions.
+  // model: 'gpt-5.5' for initial writes (higher quality), 'gpt-5-mini' for
+  // quick revisions (cheaper/faster).
+  async function runWriterAgent(userPrompt, model = 'gpt-5-mini') {
+    const apiKey = getOpenAIKey();
+    const body = {
+      model,
+      messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: userPrompt }],
+    };
+    const data = await fetchJSONWithRetry('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(body)
+    });
+    return data.choices?.[0]?.message?.content || '';
   }
 
   // ── PANEL SETUP ───────────────────────────────────────────────────────────
@@ -1166,7 +1189,7 @@ STARTUP_WEBSITE: ${startupWebsite}${buildReferenceExamplesBlock()}`;
     grid.appendChild(panel);
 
     // Initialise this panel's state store
-    panelStates[i] = { lastRawBody: '' };
+    panelStates[i] = { lastRawBody: '', researchNotes: '' };
 
     // ── PANEL STATE SWITCHER ──────────────────────────────────────────────
     // Toggles visibility between the four output states: empty / loading / error / result
@@ -1188,15 +1211,17 @@ STARTUP_WEBSITE: ${startupWebsite}${buildReferenceExamplesBlock()}`;
 
     // ── GENERATE BUTTON ENABLE/DISABLE CHECK ─────────────────────────────
     // The Generate button is only enabled when Founder Name, Startup Name,
-    // Website, and API Key are all non-empty.
+    // Website, AND both API keys (Claude for research, OpenAI for writing)
+    // are non-empty — the pipeline needs both agents to run.
     const inputs = [`fn-${i}`, `sn-${i}`, `sw-${i}`].map(id => document.getElementById(id));
     function checkGen(id) {
-      const ok = [`fn-${id}`,`sn-${id}`,`sw-${id}`].every(x => document.getElementById(x).value.trim() !== '') && getApiKey() !== '';
-      document.getElementById(`gen-${id}`).disabled = !ok;
+      const fieldsOk = [`fn-${id}`,`sn-${id}`,`sw-${id}`].every(x => document.getElementById(x).value.trim() !== '');
+      const keysOk = getAnthropicKey() !== '' && getOpenAIKey() !== '';
+      document.getElementById(`gen-${id}`).disabled = !(fieldsOk && keysOk);
     }
     checkGenFns[i] = checkGen; // Store reference so drag-drop can call it
 
-    // Re-check Generate button whenever input fields or API key change
+    // Re-check Generate button whenever input fields or either API key change
     inputs.forEach(inp => inp.addEventListener('input', () => checkGen(i)));
 
     // Enable/disable Send button based on whether a founder email is entered
@@ -1206,7 +1231,9 @@ STARTUP_WEBSITE: ${startupWebsite}${buildReferenceExamplesBlock()}`;
       const hasResult = document.getElementById(`result-${i}`).classList.contains('active');
       document.getElementById(`send-${i}`).disabled = !(hasEmail && hasResult);
     });
-    document.getElementById('api-key').addEventListener('input', () => checkGen(i));
+    document.getElementById('anthropic-api-key').addEventListener('input', () => checkGen(i));
+    document.getElementById('openai-api-key').addEventListener('input', () => checkGen(i));
+
 
     // ── PER-PANEL BUTTON HANDLERS (IIFE to capture correct `id`) ─────────
     // Using an IIFE (immediately invoked function expression) ensures that
@@ -1238,13 +1265,14 @@ STARTUP_WEBSITE: ${startupWebsite}${buildReferenceExamplesBlock()}`;
         if (!feedback) return; // Do nothing if feedback textarea is empty
         const currentSubject = document.getElementById(`subj-${id}`).textContent;
         const currentBody    = panelStates[id].lastRawBody || document.getElementById(`body-${id}`).innerText;
+        const researchNotes  = panelStates[id].researchNotes || ''; // From the original Research Agent call
         revBtnEl.disabled = true;
         revBtnEl.innerHTML = `<span class="spinner"></span> Revising…`;
         showState(id, 'loading');
         document.getElementById(`loading-txt-${id}`).textContent = 'Revising…';
         try {
-          const messages = [{ role: 'user', content: `Here is an outreach email:\n\nSUBJECT: ${currentSubject}\n\n${currentBody}\n\nRevise only the middle paragraph based on this feedback: ${feedback}\n\nCRITICAL RULES:\n- Keep paragraph 1 (greeting + intro) EXACTLY as written, word for word\n- Keep paragraph 3 (CTA + closing) EXACTLY as written, word for word. "Best," and the sender name must be on consecutive lines with no blank line between them.\n- Only rewrite paragraph 2\n- Paragraph 2 must be EXACTLY 3 sentences, no more, no less, written as one continuous block with NO line breaks between sentences\n- First sentence of paragraph 2 must be ONLY: "Really love what you are building at [company name]."\n- Second sentence: a specific, concrete OBSERVATION about the company or their space — something that shows you actually looked into them, not generic.\n- Third sentence: a STATEMENT of why that observation makes you bullish — the conviction/thesis that follows from it. No product summary. No m-dashes. Avoid vague hype words unbacked by the observation.\n- Exactly 3 paragraphs total\n- Markdown links only: [White Star Capital](https://www.whitestarcapital.com/) and [this link](${getCalendly()})\n- "Best," and the sender name must be on consecutive lines with no blank line between them.\n\nEnd with SUBJECT: on its own line — keep it punchy, creative, organic, and memorable, no bold.` }];
-          const raw = await callAPI(messages, false); // false = use gpt-5-mini, no web search
+          const revisePrompt = `Here is an outreach email:\n\nSUBJECT: ${currentSubject}\n\n${currentBody}\n\n${researchNotes ? `Original research notes on this company (for fact-checking — do not introduce anything beyond these):\n${researchNotes}\n\n` : ''}Revise only the middle paragraph based on this feedback: ${feedback}\n\nCRITICAL RULES:\n- Keep paragraph 1 (greeting + intro) EXACTLY as written, word for word\n- Keep paragraph 3 (CTA + closing) EXACTLY as written, word for word. "Best," and the sender name must be on consecutive lines with no blank line between them.\n- Only rewrite paragraph 2\n- Paragraph 2 must be EXACTLY 3 sentences, no more, no less, written as one continuous block with NO line breaks between sentences\n- First sentence of paragraph 2 must be ONLY: "Really love what you are building at [company name]."\n- Second sentence: a specific, concrete OBSERVATION about the company or their space — something that shows you actually looked into them, not generic.\n- Third sentence: a STATEMENT of why that observation makes you bullish — the conviction/thesis that follows from it. No product summary. No m-dashes. Avoid vague hype words unbacked by the observation.\n- Exactly 3 paragraphs total\n- Markdown links only: [White Star Capital](https://www.whitestarcapital.com/) and [this link](${getCalendly()})\n- "Best," and the sender name must be on consecutive lines with no blank line between them.\n\nEnd with SUBJECT: on its own line — keep it punchy, creative, organic, and memorable, no bold.`;
+          const raw = await runWriterAgent(revisePrompt, 'gpt-5-mini'); // Writer Agent only — no re-research needed
           const { subject, body } = parseOutput(raw);
           renderEmail(id, subject, body);
           document.getElementById(`fb-${id}`).value = ''; // Clear feedback after revision
@@ -1260,8 +1288,11 @@ STARTUP_WEBSITE: ${startupWebsite}${buildReferenceExamplesBlock()}`;
       });
 
       // ── GENERATE BUTTON ────────────────────────────────────────────────
-      // Calls GPT-5.5 with web search enabled to research the startup
-      // and write a personalised outreach email.
+      // Two-agent pipeline:
+      //  1. Research Agent (Claude + web search) researches the startup
+      //  2. Writer Agent (GPT) writes the email using those research notes
+      // The research notes are cached in panelStates so later revisions
+      // (including "Verify company") can reference them without re-researching.
       genBtnEl.addEventListener('click', async () => {
         const fn = document.getElementById(`fn-${id}`).value.trim();
         const sn = document.getElementById(`sn-${id}`).value.trim();
@@ -1270,9 +1301,16 @@ STARTUP_WEBSITE: ${startupWebsite}${buildReferenceExamplesBlock()}`;
         showState(id, 'loading');
         genBtnEl.disabled = true;
         genBtnEl.innerHTML = `<span class="spinner"></span>`;
-        const messages = [{ role: 'user', content: buildPrompt(fn, sn, sw) }];
         try {
-          const raw = await callAPI(messages, true); // true = use gpt-5.5 with web search
+          // Step 1: Research Agent (Claude) — fact-finds from the website
+          const researchNotes = await runResearchAgent(fn, sn, sw);
+          panelStates[id].researchNotes = researchNotes; // Cached for revisions
+
+          // Step 2: Writer Agent (GPT) — writes the email from those notes
+          document.getElementById(`loading-txt-${id}`).textContent = `Writing email…`;
+          const writerPrompt = buildWriterPrompt(fn, sn, researchNotes);
+          const raw = await runWriterAgent(writerPrompt, 'gpt-5.5');
+
           const { subject, body } = parseOutput(raw);
           renderEmail(id, subject, body);
           // Show editing hint and reveal quick-action / feedback area
@@ -1344,6 +1382,7 @@ STARTUP_WEBSITE: ${startupWebsite}${buildReferenceExamplesBlock()}`;
       // Clears all inputs and resets the panel back to its empty state.
       document.getElementById(`reset-${id}`).addEventListener('click', () => {
         panelStates[id].lastRawBody = '';
+        panelStates[id].researchNotes = '';
         // Clear all input fields including founder email
         [`fn-${id}`,`sn-${id}`,`sw-${id}`,`te-${id}`].forEach(x => document.getElementById(x).value = '');
         // Hide edit hints, quick-action buttons, and feedback area
@@ -1366,19 +1405,25 @@ STARTUP_WEBSITE: ${startupWebsite}${buildReferenceExamplesBlock()}`;
   const EJ_TEMPLATE = 'template_r0mm08t';
 
   // ── API KEY VISIBILITY TOGGLE ─────────────────────────────────────────────
-  // Switches the API key input between password (hidden) and text (visible)
-  // and updates the eye icon SVG accordingly.
-  document.getElementById('toggle-key').addEventListener('click', () => {
-    const inp = document.getElementById('api-key');
-    const ico = document.getElementById('eye-icon');
-    if (inp.type === 'password') {
-      inp.type = 'text';
-      ico.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
-    } else {
-      inp.type = 'password';
-      ico.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
-    }
-  });
+  // Switches an API key input between password (hidden) and text (visible)
+  // and updates its eye icon SVG accordingly. Shared by both the Claude and
+  // OpenAI key fields via a small helper rather than duplicating the handler.
+  function wireKeyToggle(toggleBtnId, inputId) {
+    const btn = document.getElementById(toggleBtnId);
+    const inp = document.getElementById(inputId);
+    const ico = btn.querySelector('.eye-icon');
+    btn.addEventListener('click', () => {
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        ico.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+      } else {
+        inp.type = 'password';
+        ico.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+      }
+    });
+  }
+  wireKeyToggle('toggle-key-anthropic', 'anthropic-api-key');
+  wireKeyToggle('toggle-key-openai', 'openai-api-key');
 
   // ── SEND BUTTON VISIBILITY ────────────────────────────────────────────────
   // The Send button is only shown when Ted is the selected sender (EmailJS
