@@ -612,12 +612,6 @@
       <div class="cfg-label">Calendly Link</div>
       <input id="calendly-url" type="text" value="https://calendly.com/ted-whitestarcapital/30min" />
     </div>
-
-    <!-- Make.com webhook URL for Slack notifications on email send -->
-    <div class="cfg-field">
-      <div class="cfg-label">Slack Webhook <span style="color:var(--text-muted);font-weight:400;letter-spacing:0;">(Make.com)</span></div>
-      <input id="slack-webhook" type="text" value="https://hook.us2.make.com/fgkzqvipcvw8qhlnjvi5c2fwp9usc06g" style="width:230px;" />
-    </div>
   </div>
 </div>
 
@@ -775,7 +769,7 @@ STARTUP_WEBSITE: ${startupWebsite}`;
   async function callAPI(messages, useWebSearch = false) {
     const apiKey = getApiKey();
     const body = {
-      model: useWebSearch ? 'claude-sonnet-4-20250514' : 'claude-haiku-4-5-20251001',
+      model: useWebSearch ? 'claude-sonnet-5' : 'claude-haiku-4-5-20251001',
       max_tokens: 800, system: SYSTEM, messages
     };
     // Attach the web_search tool when doing initial generation
@@ -1074,24 +1068,6 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         try {
           await emailjs.send(EJ_SERVICE, EJ_TEMPLATE, { to_email: toEmail, subject, body: bodyHTML });
           sendBtnEl.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Sent`;
-
-          // ── SLACK NOTIFICATION ──────────────────────────────────────────
-          // POST to Make.com webhook → Make forwards to Slack.
-          // Silently ignored if no webhook URL is configured.
-          const webhookUrl = document.getElementById('slack-webhook').value.trim();
-          if (webhookUrl) {
-            const startupName = document.getElementById(`sn-${id}`).value.trim();
-            fetch(webhookUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                sender:   getSender(),
-                founder:  toEmail,
-                startup:  startupName,
-                subject:  subject,
-              })
-            }).catch(() => {}); // Fire-and-forget — don't block the UI on failure
-          }
 
           setTimeout(() => { document.getElementById(`reset-${id}`).click(); }, 1500); // Auto-reset after showing "Sent"
         } catch(err) {
