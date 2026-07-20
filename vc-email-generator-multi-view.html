@@ -844,7 +844,7 @@
 
   // ── AI SYSTEM PROMPT ──────────────────────────────────────────────────────
   // Sent with every API call to set the AI's persona and goal.
-  const SYSTEM = `You are an investor at White Star Capital, a $1.5bn VC fund focused on leading Series A rounds based in NYC. You are reaching out to Seed and Series A founders with the goal of getting them on a call. Be polite, professional, and upbeat.`;
+  const SYSTEM = `You are an investor at White Star Capital, a $1.5bn VC fund focused on leading Series A rounds based in NYC. You are reaching out to Seed and Series A founders with the goal of getting them on a call. Be polite, professional, and upbeat. You are writing directly TO the founder as a person — always address them in second person ("you"/"your"), never describe their company in third person ("they/their/the company") like an analyst memo. Avoid VC/analyst jargon; write the way a sharp, busy person actually talks.`;
 
   // ── GLOBAL CONFIG HELPERS ─────────────────────────────────────────────────
   // Read the current values from the top-bar config fields.
@@ -919,7 +919,7 @@
     const firstName = founderName.split(' ')[0]; // First name only for the greeting
     return `You are a VC investor at White Star Capital, a $1.5bn fund in NYC leading Series A/B.
 
-RESEARCH NOTES (already verified via web search by a research analyst — use ONLY these as your factual basis, do not invent or assume anything beyond them):
+RESEARCH NOTES (already verified via web search by a research analyst — use ONLY these as your factual basis, do not invent or assume anything beyond them). The notes include a general description (for your context only) plus specific observations — the email should draw on the SPECIFIC observations, not the general description:
 ${researchNotes}
 
 Output:
@@ -933,6 +933,7 @@ Hard rules (no exceptions):
 - Goal: book a 30-minute intro call
 - Only reference information from the research notes above — nothing else
 - Always say "what you are building at ${startupName}"
+- The founder already knows what their own company does — never explain, summarize, or restate their business model, product category, or value prop back to them. That reads as filler, not personalization.
 - Never: summarize the startup's business, use m-dashes, say "what you are working on", say "AI-powered agents" (use "agents" or "AI agents" only), add extra paragraphs
 
 Paragraph 1 (copy exactly):
@@ -942,10 +943,11 @@ My name is ${sender} and I am a NYC-based investor at [White Star Capital](https
 
 Paragraph 2 (write this):
 - First sentence is ONLY this, word for word: "Really love what you are building at ${startupName}." Do not add anything else to this sentence.
-- Second sentence: ONE natural, concise sentence that blends a specific observation about the company (drawn from the research notes above) with why it makes you bullish. Don't write it as two separate ideas bolted together — write it the way a sharp person would actually say it out loud: observation and conviction folded into a single flowing thought.
+- Second sentence: ONE natural, concise sentence built from the SHARPEST, most specific observation in the research notes — not a restatement of what the company does. Pick the detail that's most surprising, specific, or hard-to-fake (something only someone who actually looked would know), and fold it together with why it makes you bullish into a single flowing thought.
+- Write this as a personal note TO the founder, not a report ABOUT the company. Address them in second person ("you"/"your") throughout — e.g. "your approach to X", "what you're doing with Y". NEVER switch to third person ("they/their/the company/its") — that reads like an investment memo excerpt, not an email to a person.
 - Write both sentences as ONE continuous paragraph with NO line breaks between them. Do not separate sentences onto new lines.
 - Exactly 2 sentences total, maximum. Keep it tight — this is not the place for a run-on sentence. Never mention raises, funding, or press.
-- Sound like a real, busy investor dashed this off quickly because they meant it — not like marketing copy. Do not provide a summary of their product. Do not use m-dashes. Avoid vague hype words like "exciting" or "innovative" unless immediately backed up by the specific observation.
+- Sound like a real, busy investor dashed this off quickly because they meant it — not like marketing copy or a VC memo. Avoid analyst-speak ("go-to-market leverage", "unlocks", "de-risks", "positions them to capture") — use plain, direct language instead. Do not describe or summarize their product or business model. Do not use m-dashes. Avoid vague hype words like "exciting" or "innovative" unless immediately backed up by the specific observation.
 
 Paragraph 3 (copy exactly):
 I'd love to grab 30 mins to dig deeper into what you are building and introduce our fund. Do you have availability in the coming weeks? Feel free to share times that work or book directly on my Calendly at [this link](${calendly}).
@@ -1016,19 +1018,24 @@ STARTUP_NAME: ${startupName}${buildReferenceExamplesBlock()}`;
   // handled by the model best suited to it.
   async function runResearchAgent(founderName, startupName, startupWebsite) {
     const apiKey = getAnthropicKey();
-    const prompt = `Visit ${startupWebsite} and research the company "${startupName}", run by ${founderName}. Do not confuse it with similarly named companies.
+    const prompt = `Research the company "${startupName}" (website: ${startupWebsite}), run by ${founderName}. Do not confuse it with similarly named companies.
 
-Produce concise, factual research notes (under 130 words, plain text, no markdown) covering:
-1. What the company does, in one sentence.
-2. One specific, concrete OBSERVATION about their product, positioning, traction, or market — something that shows real research, not generic.
-3. Why that observation is notable — the angle that would make an investor bullish.
+Do NOT stop at the homepage. Run multiple searches to build a real picture:
+1. The company website itself — what they actually build, who it's for, how they describe their own positioning.
+2. Recent news, press, or launch announcements about the company (last 6-12 months) — funding, product launches, partnerships, notable customers.
+3. The founder specifically — background, prior companies/roles, anything they've publicly said (interviews, posts, talks) about why they're building this.
 
-Only include details you can verify from the site. If the site is unclear on something, omit it rather than guessing.`;
+From all of that, produce factual research notes (under 180 words, plain text, no markdown) covering:
+1. What the company does, in one plain sentence (for internal reference only — this will NOT be quoted in the email).
+2. 2-3 SPECIFIC, concrete observations — the kind of detail only someone who actually looked would know. Prioritize: a surprising design/technical choice, a specific customer or use case, a notable detail about the founder's background or motivation, recent traction/momentum, or an unusual angle on the market. Avoid restating generic claims from their homepage tagline.
+3. The single sharpest, most specific observation from the above, and in one sentence, why it's the kind of thing that would make an investor genuinely bullish (not generic enthusiasm).
+
+Only include details you can verify from your searches. If something is unclear or you can't find enough to say something specific, say so plainly rather than guessing or padding with generic statements.`;
 
     const body = {
       model: 'claude-sonnet-5',
-      max_tokens: 500,
-      system: 'You are a meticulous VC research analyst. You only state facts you can verify from the website you visit, and you write in plain, concise prose.',
+      max_tokens: 900,
+      system: 'You are a meticulous VC research analyst. You dig past the homepage — recent news, the founder\'s background, and specific product details are what make an outreach email land. You only state facts you can verify from your searches, and you write in plain, concise prose. You have no patience for generic, could-apply-to-any-startup observations.',
       messages: [{ role: 'user', content: prompt }],
       tools: [{ type: 'web_search_20250305', name: 'web_search' }]
     };
@@ -1271,7 +1278,7 @@ Only include details you can verify from the site. If the site is unclear on som
         showState(id, 'loading');
         document.getElementById(`loading-txt-${id}`).textContent = 'Revising…';
         try {
-          const revisePrompt = `Here is an outreach email:\n\nSUBJECT: ${currentSubject}\n\n${currentBody}\n\n${researchNotes ? `Original research notes on this company (for fact-checking — do not introduce anything beyond these):\n${researchNotes}\n\n` : ''}Revise only the middle paragraph based on this feedback: ${feedback}\n\nCRITICAL RULES:\n- Keep paragraph 1 (greeting + intro) EXACTLY as written, word for word\n- Keep paragraph 3 (CTA + closing) EXACTLY as written, word for word. "Best," and the sender name must be on consecutive lines with no blank line between them.\n- Only rewrite paragraph 2\n- Paragraph 2 must be maximum 2 concise sentences, written as one continuous block with NO line breaks between sentences\n- First sentence of paragraph 2 must be ONLY: "Really love what you are building at ${startupName}." (use this exact company name, not a placeholder)\n- Second sentence: ONE natural sentence that blends a specific observation about the company with why it makes you bullish — folded into a single flowing thought, the way a busy investor would actually say it, not two ideas bolted together. No product summary. No m-dashes. Avoid vague hype words unless immediately backed up by the specific observation.\n- Exactly 3 paragraphs total\n- Markdown links only: [White Star Capital](https://www.whitestarcapital.com/) and [this link](${getCalendly()})\n- "Best," and the sender name must be on consecutive lines with no blank line between them.\n\nEnd with SUBJECT: on its own line — keep it punchy, creative, organic, and memorable, no bold.`;
+          const revisePrompt = `Here is an outreach email:\n\nSUBJECT: ${currentSubject}\n\n${currentBody}\n\n${researchNotes ? `Original research notes on this company (for fact-checking — do not introduce anything beyond these):\n${researchNotes}\n\n` : ''}Revise only the middle paragraph based on this feedback: ${feedback}\n\nCRITICAL RULES:\n- Keep paragraph 1 (greeting + intro) EXACTLY as written, word for word\n- Keep paragraph 3 (CTA + closing) EXACTLY as written, word for word. "Best," and the sender name must be on consecutive lines with no blank line between them.\n- Only rewrite paragraph 2\n- Paragraph 2 must be maximum 2 concise sentences, written as one continuous block with NO line breaks between sentences\n- First sentence of paragraph 2 must be ONLY: "Really love what you are building at ${startupName}." (use this exact company name, not a placeholder)\n- Second sentence: ONE natural sentence built from the sharpest, most specific observation available — not a restatement of what the company does (the founder already knows that). Blend the specific detail with why it makes you bullish, folded into a single flowing thought, the way a busy investor would actually say it.\n- Write this as a personal note TO the founder, not a report ABOUT the company. Address them in second person ("you"/"your") throughout — NEVER switch to third person ("they/their/the company/its"), that reads like an investment memo, not an email to a person.\n- Avoid analyst-speak ("go-to-market leverage", "unlocks", "de-risks", "positions them to capture") — use plain, direct language a person would actually say. Do not describe or summarize their product or business model. Do not use m-dashes. Avoid vague hype words unless immediately backed up by the specific observation.\n- Exactly 3 paragraphs total\n- Markdown links only: [White Star Capital](https://www.whitestarcapital.com/) and [this link](${getCalendly()})\n- "Best," and the sender name must be on consecutive lines with no blank line between them.\n\nEnd with SUBJECT: on its own line — keep it punchy, creative, organic, and memorable, no bold.`;
           const raw = await runWriterAgent(revisePrompt, 'gpt-5-mini'); // Writer Agent only — no re-research needed
           const { subject, body } = parseOutput(raw);
           renderEmail(id, subject, body);
