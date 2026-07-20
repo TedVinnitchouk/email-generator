@@ -928,7 +928,7 @@ Output:
 
 Hard rules (no exceptions):
 - Exactly 3 distinct paragraphs
-- Paragraph 2 is 1 paragraph only, exactly 3 sentences (see structure below)
+- Paragraph 2 is 1 paragraph only, maximum 2 concise sentences (see structure below)
 - Tone: polite, professional, approachable
 - Goal: book a 30-minute intro call
 - Only reference information from the research notes above — nothing else
@@ -942,11 +942,10 @@ My name is ${sender} and I am a NYC-based investor at [White Star Capital](https
 
 Paragraph 2 (write this):
 - First sentence is ONLY this, word for word: "Really love what you are building at ${startupName}." Do not add anything else to this sentence.
-- Second sentence: a specific, concrete OBSERVATION drawn from the research notes above — something that shows real research, not generic.
-- Third sentence: a STATEMENT of why that observation makes you bullish — the conviction/thesis, i.e. why it's exciting or well-positioned. This is the "so what" that follows from the observation.
-- Write all three sentences as ONE continuous paragraph with NO line breaks between them. Do not separate sentences onto new lines.
-- Natural, relevant, not corny. Exactly 3 sentences total. Never mention raises, funding, or press.
-- Do not provide a summary of their product. Do not use m-dashes. Keep sentences 2 and 3 concise, specific, and natural flowing — avoid vague hype words like "exciting" or "innovative" without backing them up with the actual observation.
+- Second sentence: ONE natural, concise sentence that blends a specific observation about the company (drawn from the research notes above) with why it makes you bullish. Don't write it as two separate ideas bolted together — write it the way a sharp person would actually say it out loud: observation and conviction folded into a single flowing thought.
+- Write both sentences as ONE continuous paragraph with NO line breaks between them. Do not separate sentences onto new lines.
+- Exactly 2 sentences total, maximum. Keep it tight — this is not the place for a run-on sentence. Never mention raises, funding, or press.
+- Sound like a real, busy investor dashed this off quickly because they meant it — not like marketing copy. Do not provide a summary of their product. Do not use m-dashes. Avoid vague hype words like "exciting" or "innovative" unless immediately backed up by the specific observation.
 
 Paragraph 3 (copy exactly):
 I'd love to grab 30 mins to dig deeper into what you are building and introduce our fund. Do you have availability in the coming weeks? Feel free to share times that work or book directly on my Calendly at [this link](${calendly}).
@@ -1078,7 +1077,7 @@ Only include details you can verify from the site. If the site is unclear on som
   // Preset quick-action buttons. Each has a label, an SVG icon, and a feedback
   // string that gets injected into the revision prompt when clicked.
   const QUICK_BTNS = [
-    { label: 'Make longer',    icon: `<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>`, feedback: `Make the middle paragraph approximately 33% longer and more detailed. Keep the first sentence exactly as 'Really love what you are building at [company].' Add more specific detail or context to the second sentence. Still ONE continuous paragraph, no line breaks between sentences. No product summary. No m-dashes.` },
+    { label: 'Make longer',    icon: `<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>`, feedback: `Make the second sentence of the middle paragraph somewhat richer and more specific — add a bit more concrete detail to the observation or the bullish thesis — while keeping it to ONE sentence still. Still exactly 2 sentences total in that paragraph, one continuous block, no line breaks.` },
     { label: 'Make shorter',   icon: `<line x1="5" y1="12" x2="19" y2="12"/>`, feedback: `Make the middle paragraph shorter and more concise.` },
     { label: 'More natural',   icon: `<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>`, feedback: `Rewrite the middle paragraph so it sounds more natural and human — less formal, less like it was written by AI.` },
     { label: 'Verify company', icon: `<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>`, feedback: `Double-check that the middle paragraph's personalization is accurate and specific to the correct company. Fix anything that seems generic or inaccurate.` },
@@ -1266,12 +1265,13 @@ Only include details you can verify from the site. If the site is unclear on som
         const currentSubject = document.getElementById(`subj-${id}`).textContent;
         const currentBody    = panelStates[id].lastRawBody || document.getElementById(`body-${id}`).innerText;
         const researchNotes  = panelStates[id].researchNotes || ''; // From the original Research Agent call
+        const startupName    = document.getElementById(`sn-${id}`).value.trim(); // Real company name — never a bracket placeholder
         revBtnEl.disabled = true;
         revBtnEl.innerHTML = `<span class="spinner"></span> Revising…`;
         showState(id, 'loading');
         document.getElementById(`loading-txt-${id}`).textContent = 'Revising…';
         try {
-          const revisePrompt = `Here is an outreach email:\n\nSUBJECT: ${currentSubject}\n\n${currentBody}\n\n${researchNotes ? `Original research notes on this company (for fact-checking — do not introduce anything beyond these):\n${researchNotes}\n\n` : ''}Revise only the middle paragraph based on this feedback: ${feedback}\n\nCRITICAL RULES:\n- Keep paragraph 1 (greeting + intro) EXACTLY as written, word for word\n- Keep paragraph 3 (CTA + closing) EXACTLY as written, word for word. "Best," and the sender name must be on consecutive lines with no blank line between them.\n- Only rewrite paragraph 2\n- Paragraph 2 must be EXACTLY 3 sentences, no more, no less, written as one continuous block with NO line breaks between sentences\n- First sentence of paragraph 2 must be ONLY: "Really love what you are building at [company name]."\n- Second sentence: a specific, concrete OBSERVATION about the company or their space — something that shows you actually looked into them, not generic.\n- Third sentence: a STATEMENT of why that observation makes you bullish — the conviction/thesis that follows from it. No product summary. No m-dashes. Avoid vague hype words unbacked by the observation.\n- Exactly 3 paragraphs total\n- Markdown links only: [White Star Capital](https://www.whitestarcapital.com/) and [this link](${getCalendly()})\n- "Best," and the sender name must be on consecutive lines with no blank line between them.\n\nEnd with SUBJECT: on its own line — keep it punchy, creative, organic, and memorable, no bold.`;
+          const revisePrompt = `Here is an outreach email:\n\nSUBJECT: ${currentSubject}\n\n${currentBody}\n\n${researchNotes ? `Original research notes on this company (for fact-checking — do not introduce anything beyond these):\n${researchNotes}\n\n` : ''}Revise only the middle paragraph based on this feedback: ${feedback}\n\nCRITICAL RULES:\n- Keep paragraph 1 (greeting + intro) EXACTLY as written, word for word\n- Keep paragraph 3 (CTA + closing) EXACTLY as written, word for word. "Best," and the sender name must be on consecutive lines with no blank line between them.\n- Only rewrite paragraph 2\n- Paragraph 2 must be maximum 2 concise sentences, written as one continuous block with NO line breaks between sentences\n- First sentence of paragraph 2 must be ONLY: "Really love what you are building at ${startupName}." (use this exact company name, not a placeholder)\n- Second sentence: ONE natural sentence that blends a specific observation about the company with why it makes you bullish — folded into a single flowing thought, the way a busy investor would actually say it, not two ideas bolted together. No product summary. No m-dashes. Avoid vague hype words unless immediately backed up by the specific observation.\n- Exactly 3 paragraphs total\n- Markdown links only: [White Star Capital](https://www.whitestarcapital.com/) and [this link](${getCalendly()})\n- "Best," and the sender name must be on consecutive lines with no blank line between them.\n\nEnd with SUBJECT: on its own line — keep it punchy, creative, organic, and memorable, no bold.`;
           const raw = await runWriterAgent(revisePrompt, 'gpt-5-mini'); // Writer Agent only — no re-research needed
           const { subject, body } = parseOutput(raw);
           renderEmail(id, subject, body);
