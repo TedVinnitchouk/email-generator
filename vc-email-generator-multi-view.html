@@ -664,6 +664,13 @@
       <div id="results-list"></div>
     </div>
 
+    <!-- Email history indicator — shows how many sent emails are being used
+         as style references for future generations, with a way to clear them -->
+    <div style="padding:10px 13px; border-top:1px solid var(--gold-border); flex-shrink:0;">
+      <div id="history-count" style="font-size:9px; color:var(--text-muted); line-height:1.5;"></div>
+      <button id="clear-history-btn" style="display:none; margin-top:4px; background:none; border:none; padding:0; font-size:9px; color:var(--gold); text-decoration:underline; cursor:pointer; font-family:var(--font-ui);">Clear history</button>
+    </div>
+
   </div><!-- /csv-sidebar -->
 
   <!-- ── 4-PANEL EMAIL GRID ────────────────────────────────────────────────
@@ -832,6 +839,60 @@
   function getCalendly() { return document.getElementById('calendly-url').value.trim() || 'https://calendly.com/ted-whitestarcapital/30min'; }
   function getApiKey()   { return document.getElementById('api-key').value.trim(); }
 
+  // ── EMAIL HISTORY (LEARNING FROM SENT EMAILS) ─────────────────────────────
+  // Every time an email is actually sent, its final subject + body (including
+  // any manual edits/corrections made in the contenteditable fields) are saved
+  // to localStorage. The most recent few are fed back into the generation
+  // prompt as reference examples, so corrections you make persist into future
+  // emails instead of the model reverting to its defaults each time.
+  const EMAIL_HISTORY_KEY = 'wsc-email-history';
+  const EMAIL_HISTORY_MAX = 15;      // Cap how many sent emails we keep in storage
+  const EMAIL_HISTORY_REFS = 3;      // How many of the most recent ones to inject per prompt
+
+  function getEmailHistory() {
+    try {
+      const raw = localStorage.getItem(EMAIL_HISTORY_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  }
+
+  function saveEmailToHistory(subject, bodyPlainText) {
+    try {
+      const history = getEmailHistory();
+      history.push({ subject, body: bodyPlainText, ts: Date.now() });
+      while (history.length > EMAIL_HISTORY_MAX) history.shift(); // Keep only the most recent N
+      localStorage.setItem(EMAIL_HISTORY_KEY, JSON.stringify(history));
+      updateHistoryCount();
+    } catch (e) { console.warn('Could not save email history:', e); }
+  }
+
+  function clearEmailHistory() {
+    try { localStorage.removeItem(EMAIL_HISTORY_KEY); } catch {}
+    updateHistoryCount();
+  }
+
+  // Builds the reference-examples block injected into the generation prompt.
+  // Returns '' if no history exists yet, so first-time use is unaffected.
+  function buildReferenceExamplesBlock() {
+    const history = getEmailHistory();
+    if (!history.length) return '';
+    const recent = history.slice(-EMAIL_HISTORY_REFS);
+    const examples = recent.map((e, i) =>
+      `Example ${i + 1}:\nSUBJECT: ${e.subject}\n${e.body}`
+    ).join('\n\n---\n\n');
+    return `\n\nHere are ${recent.length} real emails that were previously approved and sent — match their tone, phrasing style, and specifically how paragraph 2 states the bullish thesis (a concrete observation followed by a clear statement of conviction). Do not copy them verbatim, use them only as a style/quality reference:\n\n${examples}\n\n---\n`;
+  }
+
+  // Updates the small "N emails saved as style references" label in the sidebar
+  function updateHistoryCount() {
+    const el = document.getElementById('history-count');
+    if (!el) return;
+    const n = getEmailHistory().length;
+    el.textContent = n > 0 ? `${n} sent email${n === 1 ? '' : 's'} saved as style reference${n === 1 ? '' : 's'}` : '';
+    const clearBtn = document.getElementById('clear-history-btn');
+    if (clearBtn) clearBtn.style.display = n > 0 ? 'inline' : 'none';
+  }
+
   // ── EMAIL PROMPT BUILDER ──────────────────────────────────────────────────
   // Constructs the full user prompt sent to the model for initial email generation.
   // The AI is instructed to visit the startup's website using web search before writing,
@@ -864,10 +925,11 @@ My name is ${sender} and I am a NYC-based investor at [White Star Capital](https
 
 Paragraph 2 (write this):
 - First sentence is ONLY this, word for word: "Really love what you are building at ${startupName}." Do not add anything else to this sentence.
-- Follow with exactly 1 sentence referencing either why what they are building is relevant or a specific industry trend directly relevant to their space.
-- Write the two sentences as ONE continuous paragraph with NO line breaks between them. Do not separate sentences onto new lines.
-- Natural, relevant, not corny. Exactly 2 sentences total. Never mention raises, funding, or press.
-- Do not provide a summary of their product. Do not use m-dashes. Keep the second sentence very concise, to the point, and natural flowing.
+- Second sentence: a specific, concrete OBSERVATION about the company or the space they're in — something you noticed about their product, positioning, traction, or the market that shows you actually looked into them (not generic).
+- Third sentence: a STATEMENT of why that observation makes you bullish — the conviction/thesis, i.e. why it's exciting or well-positioned. This is the "so what" that follows from the observation.
+- Write all three sentences as ONE continuous paragraph with NO line breaks between them. Do not separate sentences onto new lines.
+- Natural, relevant, not corny. Exactly 3 sentences total. Never mention raises, funding, or press.
+- Do not provide a summary of their product. Do not use m-dashes. Keep sentences 2 and 3 concise, specific, and natural flowing — avoid vague hype words like "exciting" or "innovative" without backing them up with the actual observation.
 
 Paragraph 3 (copy exactly):
 I'd love to grab 30 mins to dig deeper into what you are building and introduce our fund. Do you have availability in the coming weeks? Feel free to share times that work or book directly on my Calendly at [this link](${calendly}).
@@ -881,7 +943,7 @@ Subject line rules: max 8 words, highly creative, punchy, and attention-grabbing
 
 FOUNDER_NAME: ${founderName}
 STARTUP_NAME: ${startupName}
-STARTUP_WEBSITE: ${startupWebsite}`;
+STARTUP_WEBSITE: ${startupWebsite}${buildReferenceExamplesBlock()}`;
   }
 
   // ── OUTPUT PARSER ─────────────────────────────────────────────────────────
@@ -1181,7 +1243,7 @@ STARTUP_WEBSITE: ${startupWebsite}`;
         showState(id, 'loading');
         document.getElementById(`loading-txt-${id}`).textContent = 'Revising…';
         try {
-          const messages = [{ role: 'user', content: `Here is an outreach email:\n\nSUBJECT: ${currentSubject}\n\n${currentBody}\n\nRevise only the middle paragraph based on this feedback: ${feedback}\n\nCRITICAL RULES:\n- Keep paragraph 1 (greeting + intro) EXACTLY as written, word for word\n- Keep paragraph 3 (CTA + closing) EXACTLY as written, word for word. "Best," and the sender name must be on consecutive lines with no blank line between them.\n- Only rewrite paragraph 2\n- Paragraph 2 must be EXACTLY 2 sentences, no more, no less, written as one continuous block with NO line breaks between sentences\n- First sentence of paragraph 2 must be ONLY: "Really love what you are building at [company name]."\n- Second sentence: one concise, natural sentence about why it's relevant or a related industry trend. No product summary. No m-dashes.\n- Exactly 3 paragraphs total\n- Markdown links only: [White Star Capital](https://www.whitestarcapital.com/) and [this link](${getCalendly()})\n- "Best," and the sender name must be on consecutive lines with no blank line between them.\n\nEnd with SUBJECT: on its own line — keep it punchy, creative, organic, and memorable, no bold.` }];
+          const messages = [{ role: 'user', content: `Here is an outreach email:\n\nSUBJECT: ${currentSubject}\n\n${currentBody}\n\nRevise only the middle paragraph based on this feedback: ${feedback}\n\nCRITICAL RULES:\n- Keep paragraph 1 (greeting + intro) EXACTLY as written, word for word\n- Keep paragraph 3 (CTA + closing) EXACTLY as written, word for word. "Best," and the sender name must be on consecutive lines with no blank line between them.\n- Only rewrite paragraph 2\n- Paragraph 2 must be EXACTLY 3 sentences, no more, no less, written as one continuous block with NO line breaks between sentences\n- First sentence of paragraph 2 must be ONLY: "Really love what you are building at [company name]."\n- Second sentence: a specific, concrete OBSERVATION about the company or their space — something that shows you actually looked into them, not generic.\n- Third sentence: a STATEMENT of why that observation makes you bullish — the conviction/thesis that follows from it. No product summary. No m-dashes. Avoid vague hype words unbacked by the observation.\n- Exactly 3 paragraphs total\n- Markdown links only: [White Star Capital](https://www.whitestarcapital.com/) and [this link](${getCalendly()})\n- "Best," and the sender name must be on consecutive lines with no blank line between them.\n\nEnd with SUBJECT: on its own line — keep it punchy, creative, organic, and memorable, no bold.` }];
           const raw = await callAPI(messages, false); // false = use gpt-5-mini, no web search
           const { subject, body } = parseOutput(raw);
           renderEmail(id, subject, body);
@@ -1266,6 +1328,10 @@ STARTUP_WEBSITE: ${startupWebsite}`;
           await emailjs.send(EJ_SERVICE, EJ_TEMPLATE, { to_email: toEmail, subject, body: bodyHTML });
           sendBtnEl.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Sent`;
 
+          // Save the FINAL version (including any manual edits) so future
+          // generations learn from corrections instead of forgetting them
+          saveEmailToHistory(subject, bodyEl.innerText);
+
           setTimeout(() => { document.getElementById(`reset-${id}`).click(); }, 1500); // Auto-reset after showing "Sent"
         } catch(err) {
           alert(`Failed to send: ${err.text || err.message || 'Unknown error'}`);
@@ -1335,6 +1401,15 @@ STARTUP_WEBSITE: ${startupWebsite}`;
 
   // Run on page load to set initial Send button visibility
   updateSendBtnVisibility();
+
+  // Show how many sent emails are currently stored as style references,
+  // and wire up the button to clear them
+  updateHistoryCount();
+  document.getElementById('clear-history-btn').addEventListener('click', () => {
+    if (confirm('Clear all saved emails used as style references? This cannot be undone.')) {
+      clearEmailHistory();
+    }
+  });
 
   // ── CSV UPLOAD & DRAG-AND-DROP ────────────────────────────────────────────
   let dragPayload = null; // Holds data for the card currently being dragged
